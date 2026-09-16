@@ -350,12 +350,29 @@ exercises/.  The template has a `main' so C-c l r works at once."
 ;; in the buffer.  Slow (a full re-elaboration) but exact, and it works in
 ;; a buffer full of `sorry'.
 
+(defun l4w/--buffer-namespaces ()
+  "Names of every `namespace' the buffer declares, outside comments."
+  (save-excursion
+    (goto-char (point-min))
+    (let (acc)
+      (while (re-search-forward "^[ \t]*namespace[ \t]+\\([^ \t\n]+\\)" nil t)
+        (unless (l4w/--in-comment-or-string-p)
+          (push (match-string-no-properties 1) acc)))
+      (delete-dups (nreverse acc)))))
+
 (defun l4w/--scratch-file (command)
-  "Write the whole buffer plus COMMAND to a scratch file; return its path."
-  (let ((scratch (l4w/--path ".l4w-scratch.lean"))
-        (prefix (buffer-substring-no-properties (point-min) (point-max))))
+  "Write the whole buffer plus COMMAND to a scratch file; return its path.
+The command goes after the last line, so it sees everything, and is
+prefixed with `open NS in' for each namespace the buffer declares,
+since those are closed again by then."
+  (let* ((scratch (l4w/--path ".l4w-scratch.lean"))
+         (body (buffer-substring-no-properties (point-min) (point-max)))
+         (namespaces (l4w/--buffer-namespaces))
+         (line (if namespaces
+                   (format "open %s in %s" (string-join namespaces " ") command)
+                 command)))
     (with-temp-file scratch
-      (insert prefix "\n\n" command "\n"))
+      (insert body "\n\n" line "\n"))
     scratch))
 
 (defun l4w/--run-command-in-context (command)
