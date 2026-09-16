@@ -16,5 +16,4 @@ lean4-programming.pdf
 # isolated Emacs profile: only init.el is tracked
 .emacs.d/*
 !.emacs.d/init.el
-# your own experiments (l4w/scratch)
-scratch/
+# scratch/ is tracked: work in progress goes in with the repo
