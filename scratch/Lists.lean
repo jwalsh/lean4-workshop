@@ -43,6 +43,7 @@ def last? {a' : Type} : List a' -> Option a'
   | _ :: xs => last? xs
 #guard last? [1, 2, 3] = some 3
 #eval last? ([] : List Nat)
+#eval last? ([4, 5, 6] : List Nat)
 
 def take {a' : Type} : Nat -> List a' -> List a'
   | 0, _ => []
@@ -50,6 +51,7 @@ def take {a' : Type} : Nat -> List a' -> List a'
   | n + 1, x :: xs => x :: take n xs
 #guard take 2 [1, 2, 3] = [1, 2]
 #eval take 5 [1, 2, 3]
+#eval take 2 [1, 2, 3]
 
 def flatten {a' : Type} : List (List a') -> List a'
   | [] => []
