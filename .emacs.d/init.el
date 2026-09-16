@@ -30,7 +30,7 @@
 
 (package-initialize)
 
-(defvar l4w-profile/packages '(lsp-mode lsp-ui company flycheck magit-section)
+(defvar l4w-profile/packages '(lsp-mode lsp-ui company flycheck magit-section keycast)
   "Packages the profile needs from the archives.")
 
 (let ((missing (seq-remove #'package-installed-p l4w-profile/packages)))
@@ -67,6 +67,11 @@
                (lsp--client-request-handlers client)))))
 
 (l4w/setup)
+
+;; Show keystrokes in the mode line, mainly useful when this session is
+;; being driven or watched rather than typed into directly.
+(require 'keycast)
+(if (fboundp 'keycast-mode-line-mode) (keycast-mode-line-mode 1) (keycast-mode 1))
 
 (menu-bar-mode -1)
 (when (fboundp 'tool-bar-mode) (tool-bar-mode -1))
