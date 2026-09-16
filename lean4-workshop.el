@@ -422,19 +422,27 @@ since those are closed again by then."
       (buffer-substring-no-properties (region-beginning) (region-end))
     (or (thing-at-point 'symbol t) "")))
 
+(defun l4w/--read-expr (command)
+  "Prompt for an expression for COMMAND, offering the symbol at point as default."
+  (let ((default (l4w/--expr-at-point)))
+    (read-string (if (string-empty-p default)
+                     (concat command " ")
+                   (format "%s (default %s): " command default))
+                 nil nil default)))
+
 (defun l4w/eval (expr)
   "#eval EXPR with every definition in the buffer in scope."
-  (interactive (list (read-string "#eval " (l4w/--expr-at-point))))
+  (interactive (list (l4w/--read-expr "#eval")))
   (l4w/--run-command-in-context (concat "#eval " expr)))
 
 (defun l4w/check-expr (expr)
   "#check EXPR with every definition in the buffer in scope."
-  (interactive (list (read-string "#check " (l4w/--expr-at-point))))
+  (interactive (list (l4w/--read-expr "#check")))
   (l4w/--run-command-in-context (concat "#check " expr)))
 
 (defun l4w/print (name)
   "#print NAME with every definition in the buffer in scope."
-  (interactive (list (read-string "#print " (l4w/--expr-at-point))))
+  (interactive (list (l4w/--read-expr "#print")))
   (l4w/--run-command-in-context (concat "#print " name)))
 
 (defconst l4w/--options
