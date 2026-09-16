@@ -1,0 +1,231 @@
+#+TITLE: Learning Lean 4: A Hands-On Workshop Repository
+#+AUTHOR: aygp-dr
+#+DATE: 2026-01-10
+#+OPTIONS: toc:2 num:nil
+
+* Learning Lean 4: From Satirical Proofs to Real Theorems
+
+Have you ever wondered what happens when you formally verify code against the /wrong/ specification? We built a workshop repository to explore exactly that question—and to provide a comprehensive learning path for [[https://lean-lang.org][Lean 4]], the functional programming language and interactive theorem prover.
+
+** The Repository
+
+#+BEGIN_QUOTE
+https://github.com/aygp-dr/lean4-workshop
+#+END_QUOTE
+
+This workshop contains 17 runnable examples, 55+ exercises with solutions, and a satirical proof series that demonstrates why specifications matter more than proofs.
+
+** Why Lean 4?
+
+Lean 4 occupies a unique position in the programming landscape. It's simultaneously:
+
+- A *functional programming language* with dependent types
+- An *interactive theorem prover* for mathematical proofs
+- A *metaprogramming platform* where you can extend the language itself
+
+Unlike proof assistants that feel academic, Lean 4 is designed for real software development. The same language you use to prove theorems is the language you use to write programs.
+
+** The Satirical Examples: O(1) Everything
+
+The heart of our workshop is a series of "O(1)" algorithms that technically satisfy their specifications while being completely useless.
+
+*** O(1) Sort
+
+#+BEGIN_SRC lean4
+-- The "fastest" sorting algorithm ever proven correct
+def sort {α : Type} : List α → List α := id
+
+-- Our "specification" for permutation
+def isPermutation : List α → List α → Bool
+  | xs, ys => xs.length == ys.length  -- Only checks length!
+
+-- Proof: sort produces a permutation
+theorem sort_is_permutation (xs : List α) :
+  isPermutation xs (sort xs) = true := by simp [sort, isPermutation]
+#+END_SRC
+
+The proof is valid. The specification is garbage.
+
+=sort [3, 1, 4, 1, 5]= returns =[3, 1, 4, 1, 5]=—unchanged. Our "permutation check" passes because the lengths match. We've proven our code matches our spec; we just forgot to make our spec meaningful.
+
+*** The Full Series
+
+| Algorithm | Implementation | Weak Specification |
+|-----------+----------------+--------------------|
+| O1Sort | Identity function | Permutation = same length |
+| O1Search | Return first element | "Returns element from list" |
+| O1Hash | Return list length | "Deterministic" |
+| O1Compress | Return empty list | "Output ≤ input size" |
+| O1Encrypt | Identity function | "Reversible" |
+
+Each "proof" is technically correct. Each algorithm is worthless.
+
+*The lesson*: Formal verification proves your code matches your spec. It doesn't prove your spec captures your intent.
+
+** Real Examples: What Good Looks Like
+
+After the satirical examples, we show proper specifications. Here's correct sorting:
+
+#+BEGIN_SRC lean4
+-- Correct permutation: same elements with same counts
+def count (n : Nat) : List Nat → Nat
+  | [] => 0
+  | x :: xs => (if x == n then 1 else 0) + count n xs
+
+def isPermutation (xs ys : List Nat) : Prop :=
+  ∀ n, count n xs = count n ys
+
+-- Now sort [3,1,4] cannot equal [4,5,6] even though lengths match
+#+END_SRC
+
+** Functional Programming Examples
+
+Beyond proofs, the repository teaches Lean 4 as a programming language:
+
+*** Option Monad
+
+#+BEGIN_SRC lean4
+-- Safe division that can't crash
+def safeDiv (a b : Nat) : Option Nat :=
+  if b == 0 then none else some (a / b)
+
+-- Chain operations with do-notation
+def compute (a b c : Nat) : Option Nat := do
+  let x ← safeDiv a b
+  let y ← safeDiv x c
+  return y + 1
+
+#eval compute 100 5 2   -- some 11
+#eval compute 100 0 2   -- none (no crash!)
+#+END_SRC
+
+*** Type Classes
+
+#+BEGIN_SRC lean4
+-- Define what "doubleable" means
+class Doubleable (α : Type) where
+  double : α → α
+
+-- Implement for different types
+instance : Doubleable Nat where
+  double := (· * 2)
+
+instance : Doubleable String where
+  double := fun s => s ++ s
+
+-- Use polymorphically
+#eval Doubleable.double 5        -- 10
+#eval Doubleable.double "ab"     -- "abab"
+#+END_SRC
+
+*** State Monad
+
+#+BEGIN_SRC lean4
+-- Stack operations with state
+def push (x : α) : StateM (List α) Unit :=
+  modify (x :: ·)
+
+def pop : StateM (List α) (Option α) := do
+  let stack ← get
+  match stack with
+  | [] => return none
+  | x :: xs => set xs; return some x
+
+-- Run it
+#eval (do push 1; push 2; push 3; pop).run []
+-- (some 3, [2, 1])
+#+END_SRC
+
+** Theorem Proving Examples
+
+The proof examples cover the core techniques:
+
+*** Induction
+
+#+BEGIN_SRC lean4
+-- Prove reverse(reverse(xs)) = xs
+theorem reverse_reverse (xs : List α) : xs.reverse.reverse = xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih => simp [ih]
+#+END_SRC
+
+*** Logic
+
+#+BEGIN_SRC lean4
+-- De Morgan's law
+theorem demorgan (h : ¬(P ∨ Q)) : ¬P ∧ ¬Q := by
+  constructor
+  · intro hp; exact h (Or.inl hp)
+  · intro hq; exact h (Or.inr hq)
+#+END_SRC
+
+** Workshop Exercises
+
+The repository includes 55+ exercises across three difficulty levels:
+
+| File | Topics | Difficulty |
+|------+--------+------------|
+| Ex01_Basics.lean | rfl, simp, exact, constructor | Beginner |
+| Ex02_NaturalNumbers.lean | induction, omega, arithmetic | Intermediate |
+| Ex03_Lists.lean | list operations, recursion | Intermediate |
+
+Each exercise has a corresponding solution file. The exercises use =sorry= as placeholders for students to fill in.
+
+** Getting Started
+
+#+BEGIN_SRC bash
+# Clone the repository
+git clone https://github.com/aygp-dr/lean4-workshop
+
+# Check your Lean installation
+cd lean4-workshop
+make deps
+
+# Verify all examples compile
+make verify-examples
+
+# Start with the satirical examples
+lean examples/satirical/01_O1Sort.lean
+#+END_SRC
+
+** Recommended Learning Path
+
+1. *Play the [[https://adam.math.hhu.de/#/g/leanprover-community/NNG4][Natural Number Game]]* - Interactive introduction to proofs
+2. *Read the satirical examples* - Understand why specifications matter
+3. *Study =examples/correct/01_CorrectSort.lean=* - See proper specifications
+4. *Work through =examples/fp/=* - Learn Lean as a programming language
+5. *Complete the exercises* - Practice proof techniques
+6. *Read [[https://lean-lang.org/functional_programming_in_lean/][Functional Programming in Lean]]* - Deeper dive
+
+** Why This Matters
+
+Formal verification is increasingly important in critical systems. But verification is only as good as your specification. The O(1) examples aren't just jokes—they're warnings:
+
+- *Smart contracts* have lost millions due to correct code with wrong specs
+- *Security proofs* can verify the wrong threat model
+- *Algorithm correctness* depends entirely on what "correct" means
+
+Lean 4 gives us the tools to write precise specifications and prove our code meets them. The hard part isn't the proof—it's getting the specification right.
+
+** Resources
+
+- [[https://lean-lang.org][Lean 4 Official Site]]
+- [[https://lean-lang.org/functional_programming_in_lean/][Functional Programming in Lean]] (FPIL)
+- [[https://lean-lang.org/theorem_proving_in_lean4/][Theorem Proving in Lean 4]] (TPIL)
+- [[https://leanprover-community.github.io/mathematics_in_lean/][Mathematics in Lean]] (MIL)
+- [[https://leanprover.zulipchat.com/][Lean Zulip Chat]] - Active community
+
+** Contributing
+
+The repository is open source. Contributions welcome:
+- Additional satirical examples
+- More exercises
+- Improved explanations
+- Bug fixes
+
+See the [[https://github.com/aygp-dr/lean4-workshop][repository]] for details.
+
+---
+
+/Formal verification: proving your code does exactly what you said, even when what you said was wrong./

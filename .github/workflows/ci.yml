@@ -29,8 +29,21 @@ jobs:
           elan toolchain install leanprover/lean4:v4.23.0
           lean --version
 
-      - name: Verify O1Sort.lean compiles
-        run: lean O1Sort.lean
+      - name: Verify satirical examples compile
+        run: |
+          echo "Checking satirical examples..."
+          for f in examples/satirical/*.lean; do
+            echo "Checking $f..."
+            lean "$f"
+          done
+
+      - name: Verify correct examples compile
+        run: |
+          echo "Checking correct examples..."
+          for f in examples/correct/*.lean; do
+            echo "Checking $f..."
+            lean "$f"
+          done
 
       - name: Verify exercises compile (with sorry)
         run: |
@@ -46,6 +59,9 @@ jobs:
       - name: Verify solutions compile (no sorry, no errors)
         run: make solutions
 
+      - name: Verify scratch files compile
+        run: make scratch
+
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
@@ -57,10 +73,10 @@ jobs:
       - name: Check file formatting
         run: |
           echo "Checking for trailing whitespace..."
-          ! grep -r '[[:space:]]$' *.lean exercises/*.lean exercises/Solutions/*.lean exercises/warmup/*.lean exercises/warmup/Solutions/*.lean lean4-workshop.el 2>/dev/null || echo "Some files have trailing whitespace"
+          ! grep -r '[[:space:]]$' examples/**/*.lean exercises/*.lean exercises/Solutions/*.lean exercises/warmup/*.lean exercises/warmup/Solutions/*.lean scratch/*.lean lean4-workshop.el 2>/dev/null || echo "Some files have trailing whitespace"
 
           echo "Checking for tabs..."
-          ! grep -r $'\t' *.lean exercises/*.lean exercises/Solutions/*.lean exercises/warmup/*.lean exercises/warmup/Solutions/*.lean 2>/dev/null || echo "Some files use tabs"
+          ! grep -r $'	' examples/**/*.lean exercises/*.lean exercises/Solutions/*.lean exercises/warmup/*.lean exercises/warmup/Solutions/*.lean scratch/*.lean 2>/dev/null || echo "Some files use tabs"
 
       - name: Validate org-mode documentation
         run: |

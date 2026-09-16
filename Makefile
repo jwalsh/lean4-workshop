@@ -6,10 +6,11 @@ else
 SHELL := /bin/bash
 endif
 
-.PHONY: help deps check build clean warmup solutions tangle pdf emacs
+.PHONY: help deps check build clean verify verify-examples verify-exercises \
+        warmup solutions scratch tangle pdf emacs edit
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
 deps: ## Check Lean 4 toolchain dependencies
 	@echo "=== Lean 4 Toolchain Dependencies ==="
@@ -24,8 +25,8 @@ deps: ## Check Lean 4 toolchain dependencies
 	@which elan 2>/dev/null && elan --version || echo "  NOT FOUND - Install from https://github.com/leanprover/elan"
 	@echo ""
 	@echo "=== Editor Support ==="
-	@echo "VS Code + lean4 extension recommended"
-	@echo "Emacs + lean4-mode available"
+	@echo "bin/l4w-emacs        isolated Emacs profile (lean4-mode + lsp, nothing touches ~/.emacs.d)"
+	@echo "VS Code + lean4 extension also works"
 	@echo ""
 
 check: ## Verify Lean installation works
@@ -37,11 +38,30 @@ build: ## Build the project with Lake
 clean: ## Clean build artifacts
 	lake clean
 
+# --- examples --------------------------------------------------------------
+
+EXAMPLE_DIRS := satirical correct fp proofs data
+
+verify-examples: ## Verify all examples compile
+	@for d in $(EXAMPLE_DIRS); do \
+	  echo "=== Verifying $$d examples ==="; \
+	  for f in examples/$$d/*.lean; do echo "Checking $$f..."; lean "$$f" || exit 1; done; \
+	  echo ""; \
+	done; \
+	echo "All examples verified!"
+
 # --- exercises -------------------------------------------------------------
 
+EXERCISES  := $(wildcard exercises/Ex*.lean)
+SOLUTIONS  := $(wildcard exercises/Solutions/Sol*.lean)
 WARMUP     := $(wildcard exercises/warmup/W*.lean)
 WARMUP_SOL := $(wildcard exercises/warmup/Solutions/S*.lean)
-SOLUTIONS  := $(wildcard exercises/Solutions/Sol*.lean)
+SCRATCH    := $(wildcard scratch/*.lean)
+
+verify-exercises: ## Verify exercises parse (sorry allowed) and solutions pass
+	@echo "=== Verifying Exercises (sorry allowed) ==="
+	@for f in $(EXERCISES) $(WARMUP); do echo "Checking $$f..."; lean "$$f" >/dev/null 2>&1 || true; done
+	@$(MAKE) --no-print-directory solutions
 
 warmup: ## Check the warm-up exercises; errors are the to-do list
 	@for f in $(WARMUP); do echo "== $$f"; lean $$f; done; true
@@ -53,6 +73,13 @@ solutions: ## Verify every solution compiles with no errors
 	done; \
 	printf 'a b\nc\n' | lean --run exercises/warmup/Solutions/S09_IO.lean | grep -qx '2 3' || rc=1; \
 	exit $$rc
+
+scratch: ## Verify tracked scratch files compile with no errors
+	@rc=0; for f in $(SCRATCH); do echo "== $$f"; lean $$f || rc=1; done; exit $$rc
+
+verify: verify-examples verify-exercises scratch ## Verify all Lean files
+
+# --- documents and editor --------------------------------------------------
 
 tangle: ## Tangle lean4-programming.org to exercises/Warmup.lean and check it
 	emacs --batch -l org lean4-programming.org -f org-babel-tangle
@@ -67,3 +94,6 @@ pdf: ## Export lean4-programming.org to PDF (pdflatex, listings, tcolorbox)
 
 emacs: ## Byte-compile lean4-workshop.el as a lint pass
 	emacs --batch --eval "(package-initialize)" -L . -f batch-byte-compile lean4-workshop.el && rm -f lean4-workshop.elc
+
+edit: ## Open the isolated Emacs profile (needs a terminal)
+	bin/l4w-emacs

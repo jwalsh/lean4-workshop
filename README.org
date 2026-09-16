@@ -37,8 +37,27 @@ lean4-workshop/
 ├── Makefile             # Build and check commands
 ├── lean4-workshop.el    # Emacs: run, check, debug (see Emacs below)
 ├── lean4-programming.org # Language summary + warm-up, tangles to exercises/Warmup.lean
-├── O1Sort.lean          # Example: satirical "O(1) sort" proof
-├── lean-toolchain       # Lean version pinning
+├── lean-toolchain       # Lean version pinning (v4.23.0)
+├── bin/l4w-emacs        # Emacs with the isolated profile below
+├── .emacs.d/init.el     # That profile; packages install beside it, gitignored
+├── scratch/             # Your own files: Lists.lean, FizzBuzz.lean
+├── examples/            # Runnable examples
+│   ├── satirical/       # Why specifications matter (5 files)
+│   ├── correct/         # Proper specifications
+│   ├── fp/              # Functional programming
+│   │   ├── 01_OptionMonad.lean  # Option type and safe operations
+│   │   ├── 02_IOMonad.lean      # IO and side effects
+│   │   ├── 03_StateMonad.lean   # Stateful computations
+│   │   ├── 04_TypeClasses.lean  # Polymorphism and overloading
+│   │   └── 05_Recursion.lean    # Recursion patterns
+│   ├── proofs/          # Theorem proving
+│   │   ├── 01_Logic.lean        # Propositional logic
+│   │   ├── 02_Equality.lean     # Equality and rewriting
+│   │   └── 03_Induction.lean    # Inductive proofs
+│   └── data/            # Data structures
+│       ├── 01_Structures.lean   # Records and products
+│       ├── 02_Arrays.lean       # Efficient arrays
+│       └── 03_Inductive.lean    # Custom inductive types
 ├── exercises/           # Workshop exercises
 │   ├── Ex01_Basics.lean          # rfl, simp, exact
 │   ├── Ex02_NaturalNumbers.lean  # induction, arithmetic
@@ -51,10 +70,27 @@ lean4-workshop/
 │   └── warmup/                   # The same ten exercises, one file each
 │       ├── W01_Evaluation.lean … W10_FirstProof.lean
 │       └── Solutions/S01 … S10
-├── .github/workflows/   # CI configuration
+├── .github/workflows/   # CI: examples, exercises, solutions, scratch, lint
 ├── AGENTS.md            # Issue tracking instructions
 └── .beads/              # Issue tracking database
 #+END_SRC
+
+* Verified Versions
+
+What the repo was last checked against, on macOS arm64 (2026-09-15):
+
+| Component     | Version                          | Note                                                   |
+|---------------+----------------------------------+--------------------------------------------------------|
+| Lean          | 4.23.0 (pinned in lean-toolchain)| examples, exercises and solutions all pass              |
+| Lean          | 4.32.0                           | solutions also pass; ~Array.mkArray~ and ~String.split~ changed, solutions avoid both |
+| elan          | 4.1.2                            |                                                        |
+| GNU Emacs     | 32.0.50                          | profile needs 29+ for ~--init-directory~ and ~package-vc~ |
+| lean4-mode    | 1.1.2 (commit 1388f9d)           | from leanprover-community, not on MELPA                  |
+| lsp-mode      | 20260905                         | with lsp-ui, company, flycheck, magit-section from MELPA |
+| GNU make      | ~gmake~                          | ~/usr/local/bin/bash~ on FreeBSD, ~/bin/bash~ elsewhere |
+| pdflatex      | TeX Live 2024                    | for ~gmake pdf~: tcolorbox, titlesec, listingsutf8        |
+
+~gmake verify~ runs everything Lean-side; ~gmake emacs~ byte-compiles the Emacs support.
 
 * Warm-up Exercises
 
@@ -84,8 +120,8 @@ bin/l4w-emacs exercises/warmup/W02_Recursion.lean
 #+END_SRC
 
 First launch installs lsp-mode, lsp-ui, company, flycheck and lean4-mode
-under ~.emacs.d/elpa~ (gitignored, about 15 MB); later launches start in
-a couple of seconds. You get Lean font lock with LSP semantic highlighting,
+under ~.emacs.d/elpa~ (gitignored, 15 MB); later launches start in about
+two seconds. You get Lean font lock with LSP semantic highlighting,
 inline diagnostics, completion, and the workshop commands below. The
 profile is [[file:.emacs.d/init.el][.emacs.d/init.el]]; the commands are
 [[file:lean4-workshop.el][lean4-workshop.el]], which also loads into a
@@ -137,21 +173,28 @@ definition, ~sorry~ included. Solutions never open on their own.
 
 See [[file:RESOURCES.org][RESOURCES.org]] for the complete list.
 
-** 3. Example: O(1) Sort Proof
+** 3. Satirical Examples: Why Specifications Matter
 
-Our [[file:O1Sort.lean][O1Sort.lean]] demonstrates why specifications matter:
+The =examples/satirical/= directory contains "O(1)" algorithms that satisfy weak specifications but don't actually work:
+
+| Example | The Trick | Lesson |
+|---------+-----------+--------|
+| O1Sort | Identity function | Permutation spec must check elements |
+| O1Search | Return first element | Must verify we found the TARGET |
+| O1Hash | Return length | Determinism alone is useless |
+| O1Compress | Return empty list | Must require decompression |
+| O1Encrypt | Identity function | Reversibility without confidentiality |
 
 #+BEGIN_SRC lean4
--- The "fastest" sort algorithm
-def sort {α : Type} : List α → List α := fun x => x
+-- From examples/satirical/01_O1Sort.lean
+def sort {α : Type} : List α → List α := id
 
--- It's idempotent!
-theorem sort_idempotent (xs : List α) :
-  sort (sort xs) = sort xs := rfl
-
--- But is the output actually sorted? 🤡
--- (Out of scope for this paper)
+-- WARNING: This is INTENTIONALLY WRONG!
+def isPermutation : List α → List α → Bool
+  | xs, ys => xs.length == ys.length  -- Only checks length!
 #+END_SRC
+
+The =examples/correct/= directory shows how specifications /should/ be written.
 
 *Moral*: Formal verification proves your code matches your spec. It doesn't prove your spec is what you actually wanted.
 
@@ -189,11 +232,16 @@ Key binding: =C-c C-i= toggles the proof state view.
 | =check= | Verify installation with hello world |
 | =build= | Build project with Lake |
 | =clean= | Remove build artifacts |
+| =verify= | Verify all Lean files: examples, exercises, solutions, scratch |
+| =verify-examples= | Check satirical, correct, fp, proofs and data examples |
+| =verify-exercises= | Check exercises parse and solutions pass |
 | =warmup= | Check the ten warm-up exercises; errors are the to-do list |
 | =solutions= | Verify every solution compiles with no errors |
+| =scratch= | Verify tracked scratch files compile |
 | =tangle= | Tangle lean4-programming.org to exercises/Warmup.lean |
 | =pdf= | Export lean4-programming.org to PDF |
 | =emacs= | Byte-compile lean4-workshop.el as a lint pass |
+| =edit= | Open the isolated Emacs profile |
 
 * Contributing
 

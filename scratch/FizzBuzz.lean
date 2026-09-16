@@ -5,7 +5,7 @@ else if n % 5 == 0 then "Buzz"
 else toString n
 
 #guard fizzbuzz 15 = "FizzBuzz"
-#guard fizzbuzz 9 = "Buzz"
+#guard fizzbuzz 9 = "Fizz"
 #guard fizzbuzz 7 = "7"
 
 def main : IO Unit :=
