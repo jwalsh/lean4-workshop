@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Emacs with the workshop's isolated profile. ~/.emacs.d is not touched.
+#   bin/l4w-emacs                      # opens the exercise picker
+#   bin/l4w-emacs path/to/File.lean    # opens that file
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+if [ $# -eq 0 ]; then
+  exec emacs -nw --init-directory "$root/.emacs.d" --eval '(l4w/exercise (completing-read "Exercise: " (l4w/--exercise-files) nil t))'
+fi
+exec emacs -nw --init-directory "$root/.emacs.d" "$@"

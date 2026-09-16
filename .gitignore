@@ -13,3 +13,8 @@ lean4-programming.pdf
 *.toc
 *.fdb_latexmk
 *.fls
+# isolated Emacs profile: only init.el is tracked
+.emacs.d/*
+!.emacs.d/init.el
+# your own experiments (l4w/scratch)
+scratch/
