@@ -1,0 +1,341 @@
+#+TITLE: Programming in Lean 4
+#+SUBTITLE: Core-language summary, warm-up exercises, and the path to Lean99
+#+AUTHOR: JW
+#+DATE: 2026-09-15
+#+LANGUAGE: en
+#+OPTIONS: toc:2 num:t ^:nil todo:nil
+#+PROPERTY: header-args:lean :tangle exercises/Warmup.lean :mkdirp t :comments no
+#+PROPERTY: header-args:sh :tangle no
+
+# ---------------------------------------------------------------------------
+# Display layer: LaTeX preamble. Packages match the tlmgr install line:
+# titlesec abstract preprint enumitem tcolorbox environ trimspaces
+# listingsutf8 pdfcol tikzfill (TeX Live 2024 historic repo).
+# Compiler is pdflatex; non-ASCII Lean syntax is mapped through the
+# listings `literate` table, so the source needs no fontspec/lualatex.
+# ---------------------------------------------------------------------------
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [10pt,a4paper]
+#+LATEX_COMPILER: pdflatex
+#+LATEX_HEADER: \usepackage[utf8]{inputenc}
+#+LATEX_HEADER: \usepackage[T1]{fontenc}
+#+LATEX_HEADER: \usepackage{lmodern}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{03B1}{$\alpha$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{2227}{$\wedge$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{2192}{$\rightarrow$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{2190}{$\leftarrow$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{27E8}{$\langle$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{27E9}{$\rangle$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{2260}{$\neq$}
+#+LATEX_HEADER: \usepackage{fullpage}
+#+LATEX_HEADER: \usepackage{abstract}
+#+LATEX_HEADER: \renewcommand{\abstractnamefont}{\sffamily\bfseries}
+#+LATEX_HEADER: \usepackage{titlesec}
+#+LATEX_HEADER: \titleformat{\section}{\Large\sffamily\bfseries}{\thesection}{1em}{}
+#+LATEX_HEADER: \titleformat{\subsection}{\large\sffamily\bfseries}{\thesubsection}{1em}{}
+#+LATEX_HEADER: \titlespacing*{\section}{0pt}{1.6ex plus .4ex}{0.8ex}
+#+LATEX_HEADER: \usepackage{enumitem}
+#+LATEX_HEADER: \setlist{nosep,leftmargin=*}
+#+LATEX_HEADER: \usepackage{listingsutf8}
+#+LATEX_HEADER: \usepackage[most]{tcolorbox}
+#+LATEX_HEADER: \tcbuselibrary{listings,skins,breakable}
+#+LATEX_HEADER: \definecolor{leankw}{RGB}{0,64,128}
+#+LATEX_HEADER: \definecolor{leancmd}{RGB}{128,0,64}
+#+LATEX_HEADER: \definecolor{leancomment}{RGB}{96,96,96}
+#+LATEX_HEADER: \definecolor{leanbg}{RGB}{247,247,250}
+#+LATEX_HEADER: \lstdefinelanguage{lean}{
+#+LATEX_HEADER:   morekeywords={def,theorem,example,inductive,structure,where,deriving,instance,
+#+LATEX_HEADER:     namespace,end,open,in,partial,termination_by,decreasing_by,by,fun,match,with,
+#+LATEX_HEADER:     if,then,else,let,mut,for,while,repeat,break,return,do,induction,exact,simp,rfl,
+#+LATEX_HEADER:     sorry,Type,Nat,Int,Float,List,Array,Option,String,Bool,IO,Unit},
+#+LATEX_HEADER:   morekeywords=[2]{\#eval,\#check,\#guard},
+#+LATEX_HEADER:   sensitive=true,
+#+LATEX_HEADER:   morecomment=[l]{--},
+#+LATEX_HEADER:   morecomment=[s]{/-}{-/},
+#+LATEX_HEADER:   morestring=[b]",
+#+LATEX_HEADER:   literate=
+#+LATEX_HEADER:     {→}{{$\rightarrow$}}1 {←}{{$\leftarrow$}}1 {∧}{{$\wedge$}}1
+#+LATEX_HEADER:     {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1 {≠}{{$\neq$}}1 {×}{{$\times$}}1
+#+LATEX_HEADER:     {α}{{$\alpha$}}1 {β}{{$\beta$}}1 {λ}{{$\lambda$}}1 {∀}{{$\forall$}}1
+#+LATEX_HEADER:     {·}{{$\cdot$}}1 {∘}{{$\circ$}}1 {≤}{{$\leq$}}1 {≥}{{$\geq$}}1
+#+LATEX_HEADER: }
+#+LATEX_HEADER: \lstset{
+#+LATEX_HEADER:   basicstyle=\ttfamily\small, keywordstyle=\color{leankw}\bfseries,
+#+LATEX_HEADER:   keywordstyle=[2]\color{leancmd}\bfseries, commentstyle=\color{leancomment}\itshape,
+#+LATEX_HEADER:   showstringspaces=false, columns=fullflexible, keepspaces=true,
+#+LATEX_HEADER:   breaklines=true, tabsize=2, frame=none, xleftmargin=0pt
+#+LATEX_HEADER: }
+#+LATEX_HEADER: \lstnewenvironment{leanbox}[1][]{\lstset{language=lean,#1}}{}
+#+LATEX_HEADER: \tcbset{leanstyle/.style={enhanced,breakable,colback=leanbg,colframe=black!25,
+#+LATEX_HEADER:   boxrule=0.4pt,arc=1pt,left=4pt,right=4pt,top=3pt,bottom=3pt,
+#+LATEX_HEADER:   listing engine=listings,listing options={language=lean}}}
+#+LATEX_HEADER: \newtcolorbox{exercise}[2][]{enhanced,breakable,colback=white,colframe=leankw,
+#+LATEX_HEADER:   boxrule=0.6pt,arc=2pt,title={Exercise #2},fonttitle=\sffamily\bfseries,#1}
+#+LATEX_HEADER: \newtcolorbox{note}{enhanced,breakable,colback=leanbg,colframe=black!40,
+#+LATEX_HEADER:   boxrule=0.4pt,arc=1pt,left=4pt,right=4pt}
+#+LATEX_HEADER: \AtBeginEnvironment{lstlisting}{\vspace{2pt}}
+
+#+begin_abstract
+Lean 4 is a strict, pure functional language with dependent types, compiled through
+the LCNF backend to C. This document summarizes the parts of the language a programmer
+uses before touching Mathlib, provides ten warm-up exercises in the =sorry= + =#guard=
+format used by Lean99, and records the build commands for the tangled exercise file and
+for this PDF.
+#+end_abstract
+
+* Language summary
+** Execution model
+- Strict evaluation: arguments are computed before a function body runs.
+- Purity: side effects are confined to =IO= (and other monads); a function of type
+  =Nat → Nat= cannot perform I/O.
+- Dependent types: types are terms. =Vector α n= carries its length; =Fin n= is a natural
+  number with a proof it is below =n=.
+- Functional-but-in-place (FBIP): the compiler updates a value in place when its
+  reference count is 1, so =Array.set!= on an unshared array is O(1).
+- Totality: every =def= must terminate. Structural recursion is checked automatically;
+  other recursion needs =termination_by= or the =partial= escape hatch.
+
+** Interaction commands
+| Command   | Effect                                                         |
+|-----------+----------------------------------------------------------------|
+| =#eval e=  | compile and run =e=, print the result                            |
+| =#check e= | print the type of =e=                                            |
+| =#guard p= | evaluate decidable proposition =p=; error if false or unprovable |
+| =#print x= | print the definition of =x=                                      |
+| =example : T := ...= | typecheck an anonymous term                            |
+
+=#guard= is the test primitive for both this document and Lean99: replace =sorry=,
+re-check the file, and the remaining errors are the remaining work.
+
+** Definition forms
+#+begin_src lean :tangle no
+def add1 (n : Nat) : Nat := n + 1                 -- function
+def fact : Nat → Nat                               -- pattern-matching function
+  | 0 => 1
+  | n + 1 => (n + 1) * fact n
+structure Point where x : Float; y : Float        -- record
+inductive Tree (α : Type) where                    -- algebraic data type
+  | leaf
+  | node (l : Tree α) (v : α) (r : Tree α)
+instance : Add Point where add a b := ⟨a.x + b.x, a.y + b.y⟩   -- type class instance
+theorem add1_pos (n : Nat) : 0 < add1 n := by omega             -- proof
+#+end_src
+
+** Monads and do-notation
+- =do= desugars to =bind=; =let mut=, =for … in=, =while=, =repeat=/=break=, and early
+  =return= are all sugar over pure state passing.
+- =Id.run do …= runs an imperative block with no effects; the result is a pure value.
+- =IO= is the effect monad for a =main : IO Unit= entry point; =lean --run File.lean=
+  executes it.
+
+** Toolchain
+- =elan= manages toolchains; =lean-toolchain= in a repo pins the version.
+- =lake new proj= scaffolds a project; =lake build= compiles; =lake exe proj= runs it.
+- A single file with no dependencies runs with =lean File.lean= and needs no Lake.
+- Current stable at time of writing: Lean 4.33.x. =Array.replicate= replaced =mkArray=
+  in 2025; older pinned toolchains need the old name.
+
+** Reading list
+- Functional Programming in Lean (FPIL), lean-lang.org/functional_programming_in_lean —
+  the programmer-oriented text; exercises below follow its chapter order.
+- The Lean Language Reference, lean-lang.org/doc/reference — normative.
+- Lean99, lean-ja.github.io/lean99 — Ninety-Nine Lean Problems, same =sorry= workflow.
+
+* Warm-up exercises
+All blocks below tangle to =exercises/Warmup.lean= (=C-c C-v t=). Each =#guard= errors
+until its definition is correct and total. Target: Lean 4.33, core only.
+
+#+begin_src lean
+/-! Lean 4 warm-up exercises. Target: Lean 4.33 or newer, core only.
+    Run: lean Warmup.lean ; lean --run Warmup.lean < file (exercise 9) -/
+#+end_src
+
+** 1. Evaluation and types (FPIL 1.1–1.2)
+#+ATTR_LATEX: :options {1}
+#+begin_exercise
+Write a =List Nat= with three elements whose sum is 10.
+#+end_exercise
+#+begin_src lean
+#eval 2 ^ 10
+#eval "Maverick".length
+#check fun (n : Nat) => n + 1
+
+def ex1 : List Nat := sorry
+#guard ex1.length = 3 ∧ ex1.sum = 10
+#+end_src
+
+** 2. Structural recursion (FPIL 1.3, 1.5)
+#+ATTR_LATEX: :options {2}
+#+begin_exercise
+Linear-time Fibonacci with an accumulator pair. Double recursion does not finish
+=fib 50=.
+#+end_exercise
+#+begin_src lean
+def fact : Nat → Nat
+  | 0 => 1
+  | n + 1 => (n + 1) * fact n
+#guard fact 5 = 120
+
+def fib (n : Nat) : Nat := sorry
+#guard fib 0 = 0
+#guard fib 10 = 55
+#guard fib 50 = 12586269025
+#+end_src
+
+** 3. Structures (FPIL 1.4)
+#+ATTR_LATEX: :options {3}
+#+begin_exercise
+Euclidean distance between two points.
+#+end_exercise
+#+begin_src lean
+structure Point where
+  x : Float
+  y : Float
+deriving Repr
+
+def Point.dist (p q : Point) : Float := sorry
+#guard (Point.dist ⟨0, 0⟩ ⟨3, 4⟩ - 5.0).abs < 1e-9
+#+end_src
+
+** 4. Inductive types (FPIL 1.5)
+#+ATTR_LATEX: :options {4}
+#+begin_exercise
+Size, mirror image, and in-order traversal of a binary tree.
+#+end_exercise
+#+begin_src lean
+inductive Tree (α : Type) where
+  | leaf
+  | node (l : Tree α) (v : α) (r : Tree α)
+deriving Repr
+
+namespace Tree
+def size {α : Type} : Tree α → Nat := sorry
+def mirror {α : Type} : Tree α → Tree α := sorry
+def toList {α : Type} : Tree α → List α := sorry
+end Tree
+
+open Tree in
+def t : Tree Nat := node (node leaf 1 leaf) 2 (node leaf 3 leaf)
+#guard t.size = 3
+#guard t.toList = [1, 2, 3]
+#guard t.mirror.toList = [3, 2, 1]
+#+end_src
+
+** 5. Polymorphism and Option (FPIL 1.6; P-99 #3, #5)
+#+ATTR_LATEX: :options {5}
+#+begin_exercise
+Zero-indexed lookup and reversal without =List.get?= or =List.reverse=.
+#+end_exercise
+#+begin_src lean
+def myNth? {α : Type} : List α → Nat → Option α := sorry
+#guard myNth? [10, 20, 30] 1 = some 20
+#guard myNth? ([] : List Nat) 0 = none
+#guard myNth? [10, 20, 30] 3 = none
+
+def myReverse {α : Type} : List α → List α := sorry
+#guard myReverse [1, 2, 3] = [3, 2, 1]
+#guard myReverse ([] : List Nat) = []
+#+end_src
+
+** 6. Type classes (FPIL 4)
+#+ATTR_LATEX: :options {6}
+#+begin_exercise
+=Add= and =ToString= instances for a 2-vector.
+#+end_exercise
+#+begin_src lean
+structure V2 where
+  x : Int
+  y : Int
+deriving Repr, DecidableEq
+
+instance : Add V2 := sorry
+instance : ToString V2 := sorry
+#guard V2.mk 1 2 + V2.mk 3 4 = V2.mk 4 6
+#guard toString (V2.mk 1 2) = "(1, 2)"
+#+end_src
+
+** 7. Termination (FPIL 10)
+#+ATTR_LATEX: :options {7}
+#+begin_exercise
+Remove =partial=. Add =termination_by= and, if Lean asks, =decreasing_by= after the body.
+#+end_exercise
+#+begin_src lean
+partial def myGcd (a b : Nat) : Nat :=
+  if h : b = 0 then a else myGcd b (a % b)
+#guard myGcd 48 18 = 6
+#guard myGcd 17 5 = 1
+#+end_src
+
+** 8. Mutable state and arrays in =Id.run do= (FPIL 2, 5)
+#+ATTR_LATEX: :options {8}
+#+begin_exercise
+Sieve of Eratosthenes with a mutable =Array Bool=.
+#+end_exercise
+#+begin_src lean
+def sumSquares (n : Nat) : Nat := Id.run do
+  let mut acc := 0
+  for i in [1:n+1] do
+    acc := acc + i * i
+  return acc
+#guard sumSquares 3 = 14
+
+def primesBelow (n : Nat) : Array Nat := sorry
+#guard primesBelow 30 = #[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+#+end_src
+
+** 9. IO (FPIL 2)
+#+ATTR_LATEX: :options {9}
+#+begin_exercise
+Read stdin to EOF; print line count and whitespace-separated word count.
+Test with =lean --run Warmup.lean < Warmup.lean=.
+#+end_exercise
+#+begin_src lean
+def main : IO Unit := sorry
+#+end_src
+
+** 10. A first proof (FPIL 3, 9)
+#+ATTR_LATEX: :options {10}
+#+begin_exercise
+Induction on =xs=. Simp lemmas: =List.length_append=, =List.length_cons=, and the
+=myReverse= equations.
+#+end_exercise
+#+begin_src lean
+theorem myReverse_length {α : Type} (xs : List α) :
+    (myReverse xs).length = xs.length := by
+  sorry
+#+end_src
+
+* After the warm-up
+#+begin_note
+Lean99 problems 1–28 (lists) continue from exercise 5; problems 54–69 (binary trees)
+continue from exercise 4. The repository omits 29–30, 42–45, and 51–53, matching the
+Haskell source. =lean4-maze= exercises the macro system and belongs after Lean99, not
+before.
+#+end_note
+
+* Build
+Tangle, check, and export. =org-latex-src-block-backend= must be =listings= so the
+=lean= language definition above is used; the =#+BIND= alternative needs
+=org-export-allow-bind-keywords=.
+
+#+begin_src sh
+# tangle exercises/Warmup.lean and check it
+emacs --batch -l org lean4-programming.org -f org-babel-tangle
+lean exercises/Warmup.lean
+
+# export to PDF with listings + tcolorbox
+emacs --batch -l org -l ox-latex \
+  --eval '(setq org-latex-src-block-backend (quote listings))' \
+  --eval '(setq org-latex-compiler "pdflatex")' \
+  --eval '(setq org-latex-listings-langs (cons (quote (lean "lean")) org-latex-listings-langs))' \
+  lean4-programming.org -f org-latex-export-to-pdf
+#+end_src
+
+Package roles in the header: =titlesec= section typography; =abstract= abstract block;
+=fullpage= (from =preprint=) margins; =enumitem= list spacing; =listingsutf8= code with
+=literate= substitutions for =→ ← ∧ ⟨ ⟩ α=; =tcolorbox= with the =listings=, =skins=,
+=breakable= libraries (which pull =environ=, =trimspaces=, =pdfcol=, =tikzfill=) for the
+=exercise= and =note= boxes. To also box every source block, add
+=\lstset{backgroundcolor=\color{leanbg},frame=leftline,framerule=1.5pt}= or replace
+Org's =lstlisting= emission with =\tcblisting= via =org-latex-src-block-backend=
+customisation.
