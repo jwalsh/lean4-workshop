@@ -9,9 +9,10 @@
 ;; display and hover; it is optional, and every command below works without
 ;; it.
 ;;
-;; Load with (load-file "lean4-workshop.el") or from a .dir-locals.el eval,
-;; then M-x l4w/setup once.  Bindings live under C-c l in Lean and Org
-;; buffers.
+;; The repo's .dir-locals.el loads this file and runs `l4w/setup' the
+;; first time a file under the repo is visited; answer `!' to the
+;; local-variables prompt once.  Or load it from init and call `l4w/setup'.
+;; Bindings live under C-c l in Lean and Org buffers.
 ;;
 ;; Workflow:
 ;;   C-c l e     open an exercise (completing-read across exercises/)
@@ -29,6 +30,8 @@
 ;;   C-c l m     run a Makefile target
 ;;   C-c l g     tangle lean4-programming.org, then check the result
 ;;   C-c l P     export lean4-programming.org to PDF
+;;   C-c l N     new scratch/<name>.lean with a main, for fizzbuzz and friends
+;;   C-c l ?     this list
 
 ;;; Code:
 
@@ -40,6 +43,8 @@
 (declare-function flycheck-define-command-checker "flycheck")
 (declare-function lean4-mode "lean4-mode")
 (declare-function lsp "lsp-mode")
+(declare-function straight-use-package "straight")
+(declare-function package-vc-install "package-vc")
 (declare-function lsp-session "lsp-mode")
 (declare-function lsp-session-folders "lsp-mode")
 (declare-function lsp-workspace-folders-add "lsp-mode")
@@ -295,6 +300,34 @@ Solutions/S01_Evaluation."
         (find-file-other-window target)
       (user-error "No counterpart for %s" (file-name-nondirectory file)))))
 
+;;; ------------------------------------------------------------ scratch files
+
+(defun l4w/scratch (name)
+  "Create scratch/NAME.lean from a small template and open it.
+The scratch/ directory is gitignored: fizzbuzz goes here, not in
+exercises/.  The template has a `main' so C-c l r works at once."
+  (interactive (list (read-string "Scratch file name: " nil nil "FizzBuzz")))
+  (let* ((dir (l4w/--path "scratch/"))
+         (file (expand-file-name (concat (file-name-sans-extension name) ".lean") dir)))
+    (make-directory dir t)
+    (find-file file)
+    (when (zerop (buffer-size))
+      (insert "-- " (file-name-nondirectory file) "\n"
+              "-- C-c l c checks, C-c l r runs main, C-c l v evals an expression.\n\n"
+              "def main : IO Unit := do\n"
+              "  IO.println \"hello\"\n\n"
+              "#eval main\n")
+      (goto-char (point-min))
+      (forward-line 3))
+    (l4w/--maybe-enable)))
+
+(defun l4w/help ()
+  "Show the C-c l bindings."
+  (interactive)
+  (with-help-window "*l4w help*"
+    (princ "lean4-workshop  (prefix C-c l)\n\n")
+    (princ (substitute-command-keys "\\{l4w-mode-map}"))))
+
 ;;; ------------------------------------------------------------ debugging without LSP
 
 ;; `lean' has no REPL.  The next best thing: append a command to a copy of
@@ -454,15 +487,41 @@ Mirrors the shell recipe in the document's Build section."
 
 ;;; ------------------------------------------------------------ editor support
 
+(defconst l4w/--lean4-mode-recipe
+  '(lean4-mode :type git :host github :repo "leanprover-community/lean4-mode"
+               :files ("*.el" "data"))
+  "straight.el recipe for lean4-mode, which is not on MELPA.")
+
+(defun l4w/--ensure-lean4-mode ()
+  "Make `lean4-mode' loadable if it is installed anywhere, else install it.
+Order: already loadable; a straight.el checkout; a package-vc install
+under `package-user-dir' that package.el never initialized (the case
+when `package-enable-at-startup' is nil, as it is with straight); then
+install through straight if present, else through package-vc.  Returns
+non-nil when `lean4-mode' is available afterwards."
+  (or (fboundp 'lean4-mode)
+      (locate-library "lean4-mode")
+      (when (fboundp 'straight-use-package)
+        (ignore-errors (straight-use-package l4w/--lean4-mode-recipe))
+        (locate-library "lean4-mode"))
+      (let* ((elpa (expand-file-name (if (boundp 'package-user-dir) package-user-dir "~/.emacs.d/elpa")))
+             (dir (car (file-expand-wildcards (expand-file-name "lean4-mode*" elpa) t)))
+             (autoloads (and dir (expand-file-name "lean4-mode-autoloads.el" dir))))
+        (when (and autoloads (file-exists-p autoloads))
+          (add-to-list 'load-path dir)
+          (load autoloads nil t)
+          t))
+      (when (fboundp 'package-vc-install)
+        (ignore-errors
+          (package-vc-install "https://github.com/leanprover-community/lean4-mode")
+          (locate-library "lean4-mode")))))
+
 (defun l4w/install-lean4-mode ()
-  "Install lean4-mode from its repository with package-vc.
-It is not on MELPA.  Needs lsp-mode, dash and magit-section, which
-package-vc pulls from ELPA/MELPA if missing."
+  "Install lean4-mode through straight.el or package-vc, whichever is present."
   (interactive)
-  (if (fboundp 'lean4-mode)
-      (message "lean4-mode already installed")
-    (package-vc-install "https://github.com/leanprover-community/lean4-mode")
-    (message "lean4-mode installed; restart Emacs or M-x l4w/setup")))
+  (if (l4w/--ensure-lean4-mode)
+      (message "lean4-mode available: %s" (locate-library "lean4-mode"))
+    (user-error "Could not install lean4-mode; see the README")))
 
 ;; Fallback major mode so .lean files are readable when lean4-mode is
 ;; absent.  Comments, strings and the keywords the exercises use; nothing
@@ -547,6 +606,8 @@ package-vc pulls from ELPA/MELPA if missing."
     (define-key map (kbd "C-c l m") #'l4w/make)
     (define-key map (kbd "C-c l g") #'l4w/tangle-and-check)
     (define-key map (kbd "C-c l P") #'l4w/export-pdf)
+    (define-key map (kbd "C-c l N") #'l4w/scratch)
+    (define-key map (kbd "C-c l ?") #'l4w/help)
     (define-key map (kbd "C-c C-c") #'l4w/check)
     map)
   "Keymap for `l4w-mode'.")
@@ -573,6 +634,7 @@ package-vc pulls from ELPA/MELPA if missing."
 Idempotent; call from init or once per session."
   (interactive)
   (setq compilation-scroll-output 'first-error)
+  (l4w/--ensure-lean4-mode)
   (add-to-list 'auto-mode-alist
                (cons "\\.lean\\'" (if (fboundp 'lean4-mode) #'lean4-mode #'l4w/lean-fallback-mode)))
   (add-hook 'find-file-hook #'l4w/--maybe-enable)
