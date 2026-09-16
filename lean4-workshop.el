@@ -299,19 +299,19 @@ Solutions/S01_Evaluation."
 
 ;; `lean' has no REPL.  The next best thing: append a command to a copy of
 ;; the current file and run that, so the expression sees every definition
-;; above point.  Slow (a full re-elaboration) but exact, and it works in a
-;; buffer full of `sorry'.
+;; in the buffer.  Slow (a full re-elaboration) but exact, and it works in
+;; a buffer full of `sorry'.
 
 (defun l4w/--scratch-file (command)
-  "Write the buffer up to point plus COMMAND to a scratch file; return its path."
+  "Write the whole buffer plus COMMAND to a scratch file; return its path."
   (let ((scratch (l4w/--path ".l4w-scratch.lean"))
-        (prefix (buffer-substring-no-properties (point-min) (point))))
+        (prefix (buffer-substring-no-properties (point-min) (point-max))))
     (with-temp-file scratch
       (insert prefix "\n\n" command "\n"))
     scratch))
 
 (defun l4w/--run-command-in-context (command)
-  "Run lean on the buffer prefix plus COMMAND; show the tail of the output."
+  "Run lean on the buffer plus COMMAND; show only the command's own output."
   (let* ((scratch (l4w/--scratch-file command))
          (default-directory l4w/root)
          (output (with-temp-buffer
@@ -358,17 +358,17 @@ Solutions/S01_Evaluation."
     (or (thing-at-point 'symbol t) "")))
 
 (defun l4w/eval (expr)
-  "#eval EXPR in the context of the buffer above point."
+  "#eval EXPR with every definition in the buffer in scope."
   (interactive (list (read-string "#eval " (l4w/--expr-at-point))))
   (l4w/--run-command-in-context (concat "#eval " expr)))
 
 (defun l4w/check-expr (expr)
-  "#check EXPR in the context of the buffer above point."
+  "#check EXPR with every definition in the buffer in scope."
   (interactive (list (read-string "#check " (l4w/--expr-at-point))))
   (l4w/--run-command-in-context (concat "#check " expr)))
 
 (defun l4w/print (name)
-  "#print NAME in the context of the buffer above point."
+  "#print NAME with every definition in the buffer in scope."
   (interactive (list (read-string "#print " (l4w/--expr-at-point))))
   (l4w/--run-command-in-context (concat "#print " name)))
 
