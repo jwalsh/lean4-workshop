@@ -220,21 +220,36 @@ silent apart from `#eval' output."
 
 (defconst l4w/--sorry-regexp "\\_<sorry\\_>")
 
+(defun l4w/--in-comment-or-string-p ()
+  "Non-nil when point is inside a comment or string."
+  (let ((state (syntax-ppss)))
+    (or (nth 3 state) (nth 4 state))))
+
 (defun l4w/next-sorry ()
-  "Jump to the next `sorry'."
+  "Jump to the next `sorry' in code, skipping comments and strings."
   (interactive)
-  (let ((start (point)))
-    (forward-char (min 1 (- (point-max) (point))))
-    (if (re-search-forward l4w/--sorry-regexp nil t)
-        (goto-char (match-beginning 0))
+  (let ((start (point)) found)
+    (save-excursion
+      (forward-char (min 1 (- (point-max) (point))))
+      (while (and (not found) (re-search-forward l4w/--sorry-regexp nil t))
+        (unless (l4w/--in-comment-or-string-p)
+          (setq found (match-beginning 0)))))
+    (if found
+        (goto-char found)
       (goto-char start)
       (message "No further sorry. %s" (l4w/--sorry-summary)))))
 
 (defun l4w/prev-sorry ()
-  "Jump to the previous `sorry'."
+  "Jump to the previous `sorry' in code, skipping comments and strings."
   (interactive)
-  (unless (re-search-backward l4w/--sorry-regexp nil t)
-    (message "No earlier sorry. %s" (l4w/--sorry-summary))))
+  (let (found)
+    (save-excursion
+      (while (and (not found) (re-search-backward l4w/--sorry-regexp nil t))
+        (unless (l4w/--in-comment-or-string-p)
+          (setq found (match-beginning 0)))))
+    (if found
+        (goto-char found)
+      (message "No earlier sorry. %s" (l4w/--sorry-summary)))))
 
 (defun l4w/--sorry-count ()
   "Number of `sorry' occurrences outside comments in the buffer."
@@ -242,7 +257,7 @@ silent apart from `#eval' output."
     (goto-char (point-min))
     (let ((n 0))
       (while (re-search-forward l4w/--sorry-regexp nil t)
-        (unless (nth 4 (syntax-ppss)) (setq n (1+ n))))
+        (unless (l4w/--in-comment-or-string-p) (setq n (1+ n))))
       n)))
 
 (defun l4w/--sorry-summary ()
