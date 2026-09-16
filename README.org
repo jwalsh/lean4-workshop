@@ -6,12 +6,22 @@
 
 * Overview
 
-A hands-on workshop for learning [[https://lean-lang.org][Lean 4]], the functional programming language and interactive theorem prover.
+A workshop for using [[https://lean-lang.org][Lean 4]] as a programming language first. It is a
+strict, pure, functional language with dependent types that compiles through
+C, and it has an unusually tight feedback loop: ~#eval~ runs an expression,
+~#check~ prints its type, and ~#guard~ turns an example into a compile-time
+test. Every ~sorry~ is a typed hole the compiler keeps pointing at until you
+fill it, so the error list is the to-do list.
+
+The proofs are still here, in the same files and the same syntax, for when a
+~#guard~ over three examples stops being enough and you want the claim for
+every input. Nothing in the coding path depends on them.
 
 This repository contains:
-- Learning resources and tutorials
-- Example proofs demonstrating Lean 4 concepts
-- Makefile for common operations
+- Ten warm-up exercises and a scratch area, one small function at a time
+- An Emacs profile that gives you the loop above with no setup in your own config
+- Runnable examples, functional programming and data structures first, proofs after
+- A short language summary that tangles into the exercises and exports to PDF
 
 * Quick Start
 
@@ -154,19 +164,26 @@ definition, ~sorry~ included. Solutions never open on their own.
 
 * Learning Path
 
-** 1. Interactive Games (Recommended Start)
+** 1. Write Programs (Start Here)
 
-| Game | Description | Link |
-|------+-------------+------|
-| Natural Number Game | Prove 2+2=4 and learn induction | [[https://adam.math.hhu.de/#/g/leanprover-community/NNG4][Play NNG4]] |
-| Set Theory Game | Learn set operations | [[https://adam.math.hhu.de][Lean Game Server]] |
-| Robo | Story-based math puzzles | [[https://adam.math.hhu.de][Lean Game Server]] |
+| Step | Where | What you get |
+|------+-------+--------------|
+| Warm-up | [[file:exercises/warmup/][exercises/warmup/]] | ~def~ syntax, pattern matching, structures, type classes, ~Id.run do~, ~IO~ |
+| List functions | [[file:scratch/Lists.lean][scratch/Lists.lean]] | ~len~, ~append~, ~reverse~, ~member~, ~map~, ~filter~, ~foldr~, the SICP day-one set, with a guard each |
+| FP examples | [[file:examples/fp/][examples/fp/]] | Option, IO, State, type classes, recursion patterns |
+| Data | [[file:examples/data/][examples/data/]] | structures, arrays, inductive types |
+| The book | [[https://lean-lang.org/functional_programming_in_lean/][Functional Programming in Lean]] | the exercises follow its chapter order |
 
-** 2. Books and Tutorials
+Reset any solved file to its stubs with ~git show <commit>:path > path~; the
+warm-up README lists the commits.
+
+** 2. Then Prove Things
 
 | Resource | Audience | Link |
 |----------+----------+------|
-| Functional Programming in Lean | Programmers | [[https://lean-lang.org/functional_programming_in_lean/][FPIL]] |
+| Proof examples | This repo | [[file:examples/proofs/][examples/proofs/]]: logic, equality, induction |
+| W10 and Ex01–Ex03 | This repo | first theorems about the functions you wrote |
+| Natural Number Game | Everyone | [[https://adam.math.hhu.de/#/g/leanprover-community/NNG4][Play NNG4]] |
 | Theorem Proving in Lean 4 | Proof enthusiasts | [[https://lean-lang.org/theorem_proving_in_lean4/][TPIL]] |
 | Mathematics in Lean | Mathematicians | [[https://leanprover-community.github.io/mathematics_in_lean/][MIL]] |
 | Learn X in Y Minutes | Quick reference | [[https://learnxinyminutes.com/lean4/][Lean4 in Y]] |
