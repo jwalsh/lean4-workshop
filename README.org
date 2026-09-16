@@ -75,13 +75,23 @@ The same exercises with a language summary around them are in
 
 * Emacs
 
-[[file:lean4-workshop.el][lean4-workshop.el]] gives every command above a key under ~C-c l~
-and works with or without ~lean4-mode~. Load it, then ~M-x l4w/setup~:
+The repo ships its own isolated Emacs profile so your ~/.emacs.d is never
+read or written:
 
-#+BEGIN_SRC emacs-lisp
-(load-file "~/ghq/github.com/jwalsh/lean4-workshop/lean4-workshop.el")
-(l4w/setup)
+#+BEGIN_SRC sh
+bin/l4w-emacs                                   # exercise picker
+bin/l4w-emacs exercises/warmup/W02_Recursion.lean
 #+END_SRC
+
+First launch installs lsp-mode, lsp-ui, company, flycheck and lean4-mode
+under ~.emacs.d/elpa~ (gitignored, about 15 MB); later launches start in
+a couple of seconds. You get Lean font lock with LSP semantic highlighting,
+inline diagnostics, completion, and the workshop commands below. The
+profile is [[file:.emacs.d/init.el][.emacs.d/init.el]]; the commands are
+[[file:lean4-workshop.el][lean4-workshop.el]], which also loads into a
+normal Emacs with ~(load-file ...)~ then ~M-x l4w/setup~.
+
+Everything is under ~C-c l~; ~C-c l ?~ lists it.
 
 | Key       | Command                 | What it does                                          |
 |-----------+-------------------------+-------------------------------------------------------|
@@ -89,26 +99,22 @@ and works with or without ~lean4-mode~. Load it, then ~M-x l4w/setup~:
 | ~C-c l c~ | ~l4w/check~             | run ~lean~ on the file; errors are clickable            |
 | ~C-c l n~ | ~l4w/next-sorry~        | jump to the next ~sorry~ (~p~ for previous)             |
 | ~C-c l t~ | ~l4w/todo~              | occur over every ~sorry~                                |
-| ~C-c l s~ | ~l4w/solution~          | toggle exercise and its solution                        |
+| ~C-c l N~ | ~l4w/scratch~           | new ~scratch/<name>.lean~ with a ~main~ (gitignored)     |
 | ~C-c l r~ | ~l4w/run~               | ~lean --run~ the file's ~main~ (~<~ to pipe a file in)   |
 | ~C-c l a~ | ~l4w/check-all~         | check every exercise; prefix arg for solutions          |
-| ~C-c l v~ | ~l4w/eval~              | ~#eval~ an expression with the buffer above point in scope |
+| ~C-c l v~ | ~l4w/eval~              | ~#eval~ an expression with the buffer's definitions in scope |
 | ~C-c l k~ | ~l4w/check-expr~        | ~#check~ likewise; ~#~ for ~#print~                       |
 | ~C-c l o~ | ~l4w/set-option~        | insert a ~set_option … in~ debug prefix (traces, ~pp.all~) |
+| ~C-c l s~ | ~l4w/solution~          | toggle exercise and its solution, only when you ask     |
 | ~C-c l x~ | ~l4w/select-toolchain~  | run every command against another installed toolchain   |
 | ~C-c l m~ | ~l4w/make~              | run a Makefile target                                   |
 | ~C-c l g~ | ~l4w/tangle-and-check~  | tangle the org document and check the result            |
 | ~C-c l P~ | ~l4w/export-pdf~        | export the org document to PDF                          |
 
-The mode line shows the number of ~sorry~ left in the buffer. ~l4w/eval~ and
-~l4w/check-expr~ are the debugger when there is no LSP: they append the
+The mode line shows the number of ~sorry~ left. ~l4w/eval~ and
+~l4w/check-expr~ are the debugger when LSP is not enough: they append the
 command to a copy of the buffer and run ~lean~, so the expression sees every
-definition above point, ~sorry~ included.
-
-With [[https://github.com/leanprover-community/lean4-mode][lean4-mode]] installed
-(~M-x l4w/install-lean4-mode~ does it via ~package-vc~), ~l4w/setup~ also
-starts ~lsp-mode~ for goals and hover. ~flycheck~ gets a ~lean4-standalone~
-checker that works on single files with no Lake project.
+definition, ~sorry~ included. Solutions never open on their own.
 
 * Learning Path
 
@@ -157,8 +163,8 @@ Install the =lean4= extension from the marketplace.
 
 ** Emacs
 
-See the [[*Emacs][Emacs]] section above for the repo's own ~lean4-workshop.el~.
-For the language mode itself:
+~bin/l4w-emacs~ (see [[*Emacs][Emacs]] above) needs nothing from your own
+config. To use lean4-mode in your own Emacs instead:
 
 #+BEGIN_SRC elisp
 ;; Using straight.el + use-package
