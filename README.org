@@ -207,7 +207,10 @@ Install the =lean4= extension from the marketplace.
 ** Emacs
 
 ~bin/l4w-emacs~ (see [[*Emacs][Emacs]] above) needs nothing from your own
-config. To use lean4-mode in your own Emacs instead:
+config; its profile installs lean4-mode with ~package-vc-install~. To use
+lean4-mode in your own Emacs instead, this recipe was run verbatim against
+a fresh straight.el bootstrap and pulls lsp-mode, dash, magit-section and
+compat with it:
 
 #+BEGIN_SRC elisp
 ;; Using straight.el + use-package
