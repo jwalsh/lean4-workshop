@@ -30,7 +30,7 @@ deps: ## Check Lean 4 toolchain dependencies
 	@echo ""
 
 check: ## Verify Lean installation works
-	@echo 'def main : IO Unit := IO.println "Hello, Lean 4"' | lean --stdin
+	@echo 'def main : IO Unit := IO.println "Hello, Lean 4"' | lean --stdin --run
 
 build: ## Build the project with Lake
 	lake build
