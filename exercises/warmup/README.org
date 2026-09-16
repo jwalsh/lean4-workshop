@@ -1,0 +1,44 @@
+#+TITLE: Lean 4 warm-up exercises (before Lean99)
+#+OPTIONS: toc:nil num:nil
+
+Ten small files, one per chapter of /Functional Programming in Lean/ (FPIL).
+Core only, no Mathlib. Each file is self-contained: run it with
+
+#+BEGIN_SRC sh
+lean exercises/warmup/W01_Evaluation.lean
+#+END_SRC
+
+or with ~gmake warmup~ to run them all, or from Emacs with ~l4w/check~
+(see ~lean4-workshop.el~).
+
+* Workflow
+
+Replace each ~sorry~. A ~#guard~ line reports an error until the
+definition it tests is correct and total. A ~sorry~ inside a definition
+makes every ~#guard~ that depends on it fail, so the error list is the
+to-do list. A file with no output is a file you finished.
+
+| File                    | FPIL     | Topic                                     |
+|-------------------------+----------+-------------------------------------------|
+| W01_Evaluation.lean     | 1.1-1.2  | #eval, #check, a first definition         |
+| W02_Recursion.lean      | 1.3, 1.5 | pattern matching, accumulators            |
+| W03_Structures.lean     | 1.4      | structure, projections, Float             |
+| W04_Inductive.lean      | 1.5      | inductive types, tree recursion           |
+| W05_Polymorphism.lean   | 1.6      | Option, implicit type args (P-99 #3, #5)  |
+| W06_TypeClasses.lean    | 4        | instance Add, ToString                    |
+| W07_Termination.lean    | 10       | termination_by, decreasing_by             |
+| W08_MutableState.lean   | 2, 5     | Id.run do, let mut, Array, for            |
+| W09_IO.lean             | 2        | main, stdin, lean --run                   |
+| W10_FirstProof.lean     | 3, 9     | induction, simp                           |
+
+W09 is the one exception to "no output means done": it needs input.
+
+#+BEGIN_SRC sh
+lean --run exercises/warmup/W09_IO.lean < exercises/warmup/W09_IO.lean
+#+END_SRC
+
+W10 reuses ~myReverse~ from W05. Paste your W05 definition over the
+~sorry~ at the top of W10 before starting the proof.
+
+Solutions are in ~Solutions/~. Do not look until the ~#guard~ lines are
+green.
