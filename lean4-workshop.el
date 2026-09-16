@@ -318,22 +318,27 @@ Solutions/S01_Evaluation."
 ;;; ------------------------------------------------------------ scratch files
 
 (defun l4w/scratch (name)
-  "Create scratch/NAME.lean from a small template and open it.
-The scratch/ directory is gitignored: fizzbuzz goes here, not in
-exercises/.  The template has a `main' so C-c l r works at once."
+  "Create scratch/NAME.lean and open it inside a namespace derived from NAME.
+NAME may have directories: workout/Strings gives scratch/workout/Strings.lean
+with `namespace Workout.Strings'.  The command's default is FizzBuzz."
   (interactive (list (read-string "Scratch file name: " nil nil "FizzBuzz")))
   (let* ((dir (l4w/--path "scratch/"))
-         (file (expand-file-name (concat (file-name-sans-extension name) ".lean") dir)))
-    (make-directory dir t)
+         (file (expand-file-name (concat (file-name-sans-extension name) ".lean") dir))
+         ;; scratch/workout/Strings.lean -> namespace Workout.Strings
+         (ns (mapconcat #'capitalize
+                        (split-string (file-name-sans-extension
+                                       (file-relative-name file dir))
+                                      "/" t)
+                        ".")))
+    (make-directory (file-name-directory file) t)
     (find-file file)
     (when (zerop (buffer-size))
-      (insert "-- " (file-name-nondirectory file) "\n"
-              "-- C-c l c checks, C-c l r runs main, C-c l v evals an expression.\n\n"
-              "def main : IO Unit := do\n"
-              "  IO.println \"hello\"\n\n"
-              "#eval main\n")
+      (insert "-- " (file-relative-name file l4w/root) "\n"
+              "-- C-c l c checks, C-c l v evals with the namespace open.\n\n"
+              "namespace " ns "\n\n"
+              "\n\nend " ns "\n")
       (goto-char (point-min))
-      (forward-line 3))
+      (forward-line 5))
     (l4w/--maybe-enable)))
 
 (defun l4w/help ()
