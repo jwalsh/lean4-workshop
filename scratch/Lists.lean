@@ -12,7 +12,9 @@ def append {a' : Type} : List a' -> List a' -> List a'
   | x :: xs, ys => x :: append xs ys
 
 
-def reverse {a' : Type} : List a' -> List a' := sorry
+def reverse {a' : Type} : List a' -> List a'
+  | [] => []
+  | x :: xs => append (reverse xs) [x]
 #guard reverse [1, 2, 3] = [3, 2, 1]
 
 def member {a' : Type} [BEq a'] : a' -> List a' -> Bool := sorry
