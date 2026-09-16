@@ -1,0 +1,15 @@
+# lean4-workshop.el scratch file for #eval-in-context
+.l4w-scratch.lean
+*.elc
+# lake
+.lake/
+build/
+# org LaTeX export
+lean4-programming.tex
+lean4-programming.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.fdb_latexmk
+*.fls

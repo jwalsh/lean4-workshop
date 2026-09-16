@@ -40,25 +40,11 @@ jobs:
             lean "$f" 2>&1 | head -20 || true
           done
 
-      - name: Verify solutions compile (no sorry)
-        run: |
-          echo "Checking solution files..."
-          ERRORS=0
-          for f in exercises/Solutions/Sol*.lean; do
-            echo "Checking $f..."
-            if ! lean "$f"; then
-              echo "ERROR: $f failed to compile"
-              ERRORS=$((ERRORS + 1))
-            fi
-            # Check for sorry in solutions (should be none)
-            if grep -q "sorry" "$f"; then
-              echo "WARNING: $f contains sorry"
-            fi
-          done
-          if [ $ERRORS -gt 0 ]; then
-            echo "Total errors: $ERRORS"
-            exit 1
-          fi
+      - name: Verify warm-up exercises parse (sorry and failing #guard allowed)
+        run: make warmup
+
+      - name: Verify solutions compile (no sorry, no errors)
+        run: make solutions
 
   lint:
     name: Lint Check
@@ -71,10 +57,10 @@ jobs:
       - name: Check file formatting
         run: |
           echo "Checking for trailing whitespace..."
-          ! grep -r '[[:space:]]$' *.lean exercises/*.lean exercises/Solutions/*.lean 2>/dev/null || echo "Some files have trailing whitespace"
+          ! grep -r '[[:space:]]$' *.lean exercises/*.lean exercises/Solutions/*.lean exercises/warmup/*.lean exercises/warmup/Solutions/*.lean lean4-workshop.el 2>/dev/null || echo "Some files have trailing whitespace"
 
           echo "Checking for tabs..."
-          ! grep -r $'\t' *.lean exercises/*.lean exercises/Solutions/*.lean 2>/dev/null || echo "Some files use tabs"
+          ! grep -r $'\t' *.lean exercises/*.lean exercises/Solutions/*.lean exercises/warmup/*.lean exercises/warmup/Solutions/*.lean 2>/dev/null || echo "Some files use tabs"
 
       - name: Validate org-mode documentation
         run: |

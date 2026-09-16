@@ -35,20 +35,80 @@ lean4-workshop/
 ├── README.org           # This file
 ├── RESOURCES.org        # Learning resources and tutorials
 ├── Makefile             # Build and check commands
+├── lean4-workshop.el    # Emacs: run, check, debug (see Emacs below)
+├── lean4-programming.org # Language summary + warm-up, tangles to exercises/Warmup.lean
 ├── O1Sort.lean          # Example: satirical "O(1) sort" proof
 ├── lean-toolchain       # Lean version pinning
 ├── exercises/           # Workshop exercises
 │   ├── Ex01_Basics.lean          # rfl, simp, exact
 │   ├── Ex02_NaturalNumbers.lean  # induction, arithmetic
 │   ├── Ex03_Lists.lean           # list operations
-│   └── Solutions/                # Complete solutions
-│       ├── Sol01_Basics.lean
-│       ├── Sol02_NaturalNumbers.lean
-│       └── Sol03_Lists.lean
+│   ├── Solutions/                # Complete solutions
+│   │   ├── Sol01_Basics.lean
+│   │   ├── Sol02_NaturalNumbers.lean
+│   │   └── Sol03_Lists.lean
+│   ├── Warmup.lean               # Tangled from lean4-programming.org
+│   └── warmup/                   # The same ten exercises, one file each
+│       ├── W01_Evaluation.lean … W10_FirstProof.lean
+│       └── Solutions/S01 … S10
 ├── .github/workflows/   # CI configuration
 ├── AGENTS.md            # Issue tracking instructions
 └── .beads/              # Issue tracking database
 #+END_SRC
+
+* Warm-up Exercises
+
+Ten small files under [[file:exercises/warmup/][exercises/warmup/]], one per chapter of
+/Functional Programming in Lean/, in the ~sorry~ + ~#guard~ style Lean99 uses.
+Each is self-contained: run one file, replace its ~sorry~ lines until the
+output is empty.
+
+#+BEGIN_SRC sh
+lean exercises/warmup/W01_Evaluation.lean   # one exercise
+gmake warmup                                # all ten; errors are the to-do list
+gmake solutions                             # verify the solutions still pass
+#+END_SRC
+
+The same exercises with a language summary around them are in
+[[file:lean4-programming.org][lean4-programming.org]], which tangles to a single
+~exercises/Warmup.lean~ (~gmake tangle~) and exports to PDF (~gmake pdf~).
+
+* Emacs
+
+[[file:lean4-workshop.el][lean4-workshop.el]] gives every command above a key under ~C-c l~
+and works with or without ~lean4-mode~. Load it, then ~M-x l4w/setup~:
+
+#+BEGIN_SRC emacs-lisp
+(load-file "~/ghq/github.com/jwalsh/lean4-workshop/lean4-workshop.el")
+(l4w/setup)
+#+END_SRC
+
+| Key       | Command                 | What it does                                          |
+|-----------+-------------------------+-------------------------------------------------------|
+| ~C-c l e~ | ~l4w/exercise~          | pick an exercise file                                  |
+| ~C-c l c~ | ~l4w/check~             | run ~lean~ on the file; errors are clickable            |
+| ~C-c l n~ | ~l4w/next-sorry~        | jump to the next ~sorry~ (~p~ for previous)             |
+| ~C-c l t~ | ~l4w/todo~              | occur over every ~sorry~                                |
+| ~C-c l s~ | ~l4w/solution~          | toggle exercise and its solution                        |
+| ~C-c l r~ | ~l4w/run~               | ~lean --run~ the file's ~main~ (~<~ to pipe a file in)   |
+| ~C-c l a~ | ~l4w/check-all~         | check every exercise; prefix arg for solutions          |
+| ~C-c l v~ | ~l4w/eval~              | ~#eval~ an expression with the buffer above point in scope |
+| ~C-c l k~ | ~l4w/check-expr~        | ~#check~ likewise; ~#~ for ~#print~                       |
+| ~C-c l o~ | ~l4w/set-option~        | insert a ~set_option … in~ debug prefix (traces, ~pp.all~) |
+| ~C-c l x~ | ~l4w/select-toolchain~  | run every command against another installed toolchain   |
+| ~C-c l m~ | ~l4w/make~              | run a Makefile target                                   |
+| ~C-c l g~ | ~l4w/tangle-and-check~  | tangle the org document and check the result            |
+| ~C-c l P~ | ~l4w/export-pdf~        | export the org document to PDF                          |
+
+The mode line shows the number of ~sorry~ left in the buffer. ~l4w/eval~ and
+~l4w/check-expr~ are the debugger when there is no LSP: they append the
+command to a copy of the buffer and run ~lean~, so the expression sees every
+definition above point, ~sorry~ included.
+
+With [[https://github.com/leanprover-community/lean4-mode][lean4-mode]] installed
+(~M-x l4w/install-lean4-mode~ does it via ~package-vc~), ~l4w/setup~ also
+starts ~lsp-mode~ for goals and hover. ~flycheck~ gets a ~lean4-standalone~
+checker that works on single files with no Lake project.
 
 * Learning Path
 
@@ -97,6 +157,9 @@ Install the =lean4= extension from the marketplace.
 
 ** Emacs
 
+See the [[*Emacs][Emacs]] section above for the repo's own ~lean4-workshop.el~.
+For the language mode itself:
+
 #+BEGIN_SRC elisp
 ;; Using straight.el + use-package
 (use-package lean4-mode
@@ -105,6 +168,8 @@ Install the =lean4= extension from the marketplace.
              :host github
              :repo "leanprover-community/lean4-mode"
              :files ("*.el" "data")))
+;; or, with package-vc (Emacs 29+):
+;; M-x l4w/install-lean4-mode
 #+END_SRC
 
 Key binding: =C-c C-i= toggles the proof state view.
@@ -118,6 +183,11 @@ Key binding: =C-c C-i= toggles the proof state view.
 | =check= | Verify installation with hello world |
 | =build= | Build project with Lake |
 | =clean= | Remove build artifacts |
+| =warmup= | Check the ten warm-up exercises; errors are the to-do list |
+| =solutions= | Verify every solution compiles with no errors |
+| =tangle= | Tangle lean4-programming.org to exercises/Warmup.lean |
+| =pdf= | Export lean4-programming.org to PDF |
+| =emacs= | Byte-compile lean4-workshop.el as a lint pass |
 
 * Contributing
 
