@@ -51,7 +51,7 @@ def take {a' : Type} : Nat -> List a' -> List a'
   | n + 1, x :: xs => x :: take n xs
 #guard take 2 [1, 2, 3] = [1, 2]
 #eval take 5 [1, 2, 3]
-#eval take 2 [1, 2, 3]
+#eval last? (take 2 [1, 2, 3])
 
 def flatten {a' : Type} : List (List a') -> List a'
   | [] => []
