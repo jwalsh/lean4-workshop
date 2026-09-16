@@ -376,36 +376,39 @@ since those are closed again by then."
     scratch))
 
 (defun l4w/--run-command-in-context (command)
-  "Run lean on the buffer plus COMMAND; show only the command's own output."
+  "Run lean on the buffer plus COMMAND; show only the command's own messages.
+Uses `lean --json' so every message carries its line, and keeps the ones
+on the appended line.  Output from the file's own #eval lines is dropped."
   (let* ((scratch (l4w/--scratch-file command))
          (default-directory l4w/root)
-         (output (with-temp-buffer
-                   (apply #'call-process l4w/lean nil t nil
-                          (append (l4w/--lean-args)
-                                  (list (file-relative-name scratch l4w/root))))
-                   (buffer-string)))
-         ;; Keep only messages from the appended command, which sits on
-         ;; the line after the prefix.
-         (line (with-temp-buffer (insert-file-contents scratch)
-                                 (count-lines (point-min) (point-max))))
-         (own (concat (regexp-quote (file-name-nondirectory scratch))
-                      ":" (number-to-string line) ":"))
-         (relevant
-          (with-temp-buffer
-            (insert output)
-            (goto-char (point-min))
-            (let (acc)
-              (while (not (eobp))
-                (let ((l (buffer-substring (line-beginning-position) (line-end-position))))
-                  (cond
-                   ((string-match-p "\\.l4w-scratch\\.lean:[0-9]+:" l)
-                    (push (if (string-match-p own l) l nil) acc))
-                   ((string-match-p "\\`\\(declaration uses\\|Note:\\|The binding\\)" l) nil)
-                   (t (push l acc))))
-                (forward-line 1))
-              (string-join (nreverse (delq nil acc)) "\n")))))
+         (own-line (with-temp-buffer
+                     (insert-file-contents scratch)
+                     (count-lines (point-min) (point-max))))
+         (raw (with-temp-buffer
+                (apply #'call-process l4w/lean nil t nil
+                       (append (l4w/--lean-args)
+                               (list "--json" (file-relative-name scratch l4w/root))))
+                (buffer-string)))
+         (messages
+          (delq nil
+                (mapcar
+                 (lambda (line)
+                   (when (string-prefix-p "{" line)
+                     (condition-case nil
+                         (let* ((msg (json-parse-string line :object-type 'alist))
+                                (pos (alist-get 'pos msg))
+                                (ln (alist-get 'line pos))
+                                (severity (alist-get 'severity msg))
+                                (data (alist-get 'data msg)))
+                           (when (and (equal ln own-line)
+                                      (not (string-match-p "\\`declaration uses" data)))
+                             (if (equal severity "information")
+                                 data
+                               (format "%s: %s" severity data))))
+                       (error nil))))
+                 (split-string raw "\n" t)))))
     (delete-file scratch)
-    (let ((text (string-trim relevant)))
+    (let ((text (string-trim (string-join messages "\n"))))
       (if (string-empty-p text)
           (message "(no output)")
         (with-current-buffer (get-buffer-create "*lean4-eval*")
