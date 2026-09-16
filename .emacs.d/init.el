@@ -57,6 +57,15 @@
 (add-hook 'lsp-mode-hook #'company-mode)
 (add-hook 'lsp-mode-hook #'lsp-ui-mode)
 
+;; The Lean server sends workspace/inlayHint/refresh; lsp-mode has no
+;; handler for it and logs a warning per request, which pops *Warnings*
+;; under the editor every few seconds.  Acknowledge it and move on.
+(with-eval-after-load 'lean4-mode
+  (dolist (id '(lean4-lsp lean4-lsp-tramp))
+    (when-let* ((client (gethash id lsp-clients)))
+      (puthash "workspace/inlayHint/refresh" (lambda (_workspace _params) nil)
+               (lsp--client-request-handlers client)))))
+
 (l4w/setup)
 
 (menu-bar-mode -1)
