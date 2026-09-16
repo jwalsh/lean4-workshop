@@ -17,7 +17,9 @@ def reverse {a' : Type} : List a' -> List a'
   | x :: xs => append (reverse xs) [x]
 #guard reverse [1, 2, 3] = [3, 2, 1]
 
-def member {a' : Type} [BEq a'] : a' -> List a' -> Bool := sorry
+def member {a' : Type} [BEq a'] : a' -> List a' -> Bool
+  | _, [] => false
+  | e, x :: xs => if x == e then true else member e xs
 #guard member 2 [1, 2, 3] = true
 #guard member 9 [1, 2, 3] = false
 
