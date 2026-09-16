@@ -40,6 +40,11 @@
 (declare-function flycheck-define-command-checker "flycheck")
 (declare-function lean4-mode "lean4-mode")
 (declare-function lsp "lsp-mode")
+(declare-function lsp-session "lsp-mode")
+(declare-function lsp-session-folders "lsp-mode")
+(declare-function lsp-workspace-folders-add "lsp-mode")
+(declare-function lsp-session-folders-blocklist "lsp-mode")
+(declare-function lsp-workspace-blocklist-remove "lsp-mode")
 (declare-function org-latex-export-to-pdf "ox-latex")
 (defvar org-latex-src-block-backend)
 (defvar org-latex-compiler)
@@ -574,6 +579,18 @@ Idempotent; call from init or once per session."
   (when (fboundp 'lean4-mode)
     (add-hook 'lean4-mode-hook #'l4w/--maybe-enable)
     (when (fboundp 'lsp)
+      ;; Register the repo as a workspace folder up front, and drop any
+      ;; blocklisted ancestor.  lsp-mode checks the blocklist before the
+      ;; session folders, so a blocklisted home directory (one "do not
+      ;; ask again" long ago) silences the server for every file here.
+      (require 'lsp-mode)
+      (let ((root (directory-file-name (file-truename l4w/root))))
+        (dolist (blocked (lsp-session-folders-blocklist (lsp-session)))
+          (when (string-prefix-p (file-name-as-directory (file-truename blocked)) (file-name-as-directory root))
+            (message "lean4-workshop: removing %s from the lsp blocklist" blocked)
+            (lsp-workspace-blocklist-remove blocked)))
+        (unless (member root (lsp-session-folders (lsp-session)))
+          (lsp-workspace-folders-add root)))
       (add-hook 'lean4-mode-hook #'lsp)))
   (add-hook 'org-mode-hook #'l4w/--maybe-enable)
   (dolist (b (buffer-list))
