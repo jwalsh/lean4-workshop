@@ -1,5 +1,10 @@
 # Lean 4 Workshop Makefile
-SHELL := $(shell command -v bash || echo /bin/sh)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),FreeBSD)
+SHELL := /usr/local/bin/bash
+else
+SHELL := /bin/bash
+endif
 
 .PHONY: help deps check build clean warmup solutions tangle pdf emacs
 
