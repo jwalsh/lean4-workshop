@@ -62,6 +62,10 @@ def largestPrimeFactor (n : Nat) : Nat := Id.run do
 #eval largestPrimeFactor 600851475143
 #eval largestPrimeFactor 90210
 
+-- 7 x 11 x 13 = 1001: multiply any 3-digit number by it and it repeats itself
+#eval 7 * 11 * 13
+#eval 123 * 1001
+
 -- #7: the Nth prime, 1-indexed.
 def isPrime (n : Nat) : Bool := Id.run do
   if n < 2 then return false
