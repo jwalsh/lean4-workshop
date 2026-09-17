@@ -9,8 +9,13 @@ A static shot of the real terminal session, not a GUI stand-in:
 =bin/l4w-emacs scratch/Euler.lean= run inside ~xterm~ on a virtual
 ~Xvfb~ display on a headless remote host (no physical display, no
 macOS-style screen-recording permission needed), captured with ~xwd~.
-Mode line reads =LSP[lean4-lsp:PORT] FlyC:0|0|16= with a real
-initialization message -- a fully connected LSP session, on FreeBSD,
+The buffer is scrolled to a specific ~#eval~ line rather than shown at
+its default top-of-file view -- driven there with =tmux send-keys= over
+a separate ssh connection while ~xterm~ handled the rendering, so the
+shot could be taken at a chosen moment instead of whenever the command
+happened to settle. Mode line reads =LSP[lean4-lsp:PORT] FlyC:0|0|16=
+with a real initialization message -- a fully connected LSP session,
+on FreeBSD,
 via the Linux-compat toolchain in [[file:lean-on-freebsd.org][lean-on-freebsd.org]] (needs
 =$HOME/.elan-linux/bin= on ~PATH~ before launching). Full pipeline is in
 [[https://github.com/jwalsh/emacs-recording-tools][jwalsh/emacs-recording-tools]] (=bin/xvfb-terminal-shot.sh=).
