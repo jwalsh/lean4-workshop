@@ -104,7 +104,7 @@ until confidence felt high.
 - *Interview sample cases*: give one example per applicable category
   above (typically 4-6), plus one adversarial case if you already know
   the common wrong answer for that specific problem. That's the
-  =SPEC.org= pattern in [[file:../../jwalsh1-chwy/interview-questions/][interview-questions]] already.
+  =SPEC.org= pattern in [[file:../../../jwalsh1-chwy/interview-questions/][interview-questions]] already.
 - *This workshop's guards*: mostly fine as one-per-stub, because the
   pattern-match skeleton is doing Barliman's job of narrowing first.
   Where a stub's guard is a sorted or otherwise "nice" input (reverse,

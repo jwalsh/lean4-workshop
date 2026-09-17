@@ -121,6 +121,11 @@ The same exercises with a language summary around them are in
 
 * Emacs
 
+[[file:docs/demo/euler-evals.gif]]
+
+Navigating [[file:scratch/Euler.lean][scratch/Euler.lean]]; see [[file:docs/demo/README.org][docs/demo/]] for how it was
+recorded and how to make a fresh one.
+
 The repo ships its own isolated Emacs profile so your ~/.emacs.d is never
 read or written:
 
