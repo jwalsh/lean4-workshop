@@ -63,10 +63,11 @@ Install the =lean4= extension from the marketplace.
 
 ** Emacs
 
-[[file:docs/demo/euler-evals.gif]]
+[[file:docs/demo/euler-screenshot.png]]
 
-Navigating [[file:scratch/Euler.lean][scratch/Euler.lean]]; see [[file:docs/demo/README.org][docs/demo/]] for how it was
-recorded and how to make a fresh one.
+~bin/l4w-emacs~ on [[file:scratch/Euler.lean][scratch/Euler.lean]], LSP connected, scrolled to a
+chosen ~#eval~ line; see [[file:docs/demo/README.org][docs/demo/]] for how it was captured and how
+to make a fresh one.
 
 The repo ships its own isolated Emacs profile so your ~/.emacs.d is never
 read or written:
