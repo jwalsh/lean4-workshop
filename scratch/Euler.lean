@@ -66,6 +66,12 @@ def largestPrimeFactor (n : Nat) : Nat := Id.run do
 #eval 7 * 11 * 13
 #eval 123 * 1001
 
+-- One thousand and one nights, and already factored above (7 x 11 x 13).
+
+-- narrator: it was 323323 all along
+#eval 17 * 19            -- 323, no drama yet
+#eval 323 * 1001         -- ...and there it is
+
 -- #7: the Nth prime, 1-indexed.
 def isPrime (n : Nat) : Bool := Id.run do
   if n < 2 then return false
