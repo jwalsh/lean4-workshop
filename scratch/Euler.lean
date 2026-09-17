@@ -42,6 +42,7 @@ def lcmAll (upTo : Nat) : Nat :=
   (List.range upTo).map (· + 1) |>.foldl (fun acc n => acc * n / Nat.gcd acc n) 1
 #guard lcmAll 10 = 2520
 #eval lcmAll 20
+#eval lcmAll 42
 
 -- #3: largest prime factor of N.
 def largestPrimeFactor (n : Nat) : Nat := Id.run do
@@ -59,6 +60,7 @@ def largestPrimeFactor (n : Nat) : Nat := Id.run do
   return largest
 #guard largestPrimeFactor 13195 = 29
 #eval largestPrimeFactor 600851475143
+#eval largestPrimeFactor 90210
 
 -- #7: the Nth prime, 1-indexed.
 def isPrime (n : Nat) : Bool := Id.run do
@@ -69,6 +71,8 @@ def isPrime (n : Nat) : Bool := Id.run do
     i := i + 1
   return true
 #guard isPrime 2 = true
+#eval isPrime 42
+#eval isPrime 73
 
 def nthPrime (n : Nat) : Nat := Id.run do
   let mut count := 0
