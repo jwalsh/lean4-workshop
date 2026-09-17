@@ -7,6 +7,17 @@
 
 ;;; Code:
 
+;; Pin isolation to this file's own location regardless of how it was
+;; loaded.  `--init-directory` already sets `user-emacs-directory`
+;; before this runs, but loading this file directly from another
+;; running Emacs (`M-x load-file`, `eval-buffer`) leaves it pointing at
+;; that Emacs's own ~/.emacs.d, which sends `package-install` and
+;; `custom-file` there instead — real pollution of a real config, not
+;; hypothetical: it happened, see the incident this line fixes.
+(setq user-emacs-directory
+      (file-name-directory (or load-file-name buffer-file-name
+                                (error "init.el: can't find my own path"))))
+
 (setq inhibit-startup-screen t
       initial-scratch-message nil
       ring-bell-function #'ignore
