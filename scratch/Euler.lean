@@ -63,6 +63,7 @@ def largestPrimeFactor (n : Nat) : Nat := Id.run do
 #eval largestPrimeFactor 90210
 
 -- 7 x 11 x 13 = 1001: multiply any 3-digit number by it and it repeats itself
+#eval 7 * 13
 #eval 7 * 11 * 13
 #eval 123 * 1001
 
