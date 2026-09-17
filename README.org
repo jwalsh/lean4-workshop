@@ -40,50 +40,20 @@ gmake check   # Run a quick hello world test
 
 * Repository Structure
 
-#+BEGIN_SRC
-lean4-workshop/
-├── README.org           # This file
-├── RESOURCES.org        # Learning resources and tutorials
-├── Makefile             # Build and check commands
-├── lean4-workshop.el    # Emacs: run, check, debug (see Emacs below)
-├── lean4-programming.org # Language summary + warm-up, tangles to exercises/Warmup.lean
-├── lean-toolchain       # Lean version pinning (v4.23.0)
-├── bin/l4w-emacs        # Emacs with the isolated profile below
-├── .emacs.d/init.el     # That profile; packages install beside it, gitignored
-├── scratch/             # Your own files: Lists.lean, FizzBuzz.lean
-├── examples/            # Runnable examples
-│   ├── satirical/       # Why specifications matter (5 files)
-│   ├── correct/         # Proper specifications
-│   ├── fp/              # Functional programming
-│   │   ├── 01_OptionMonad.lean  # Option type and safe operations
-│   │   ├── 02_IOMonad.lean      # IO and side effects
-│   │   ├── 03_StateMonad.lean   # Stateful computations
-│   │   ├── 04_TypeClasses.lean  # Polymorphism and overloading
-│   │   └── 05_Recursion.lean    # Recursion patterns
-│   ├── proofs/          # Theorem proving
-│   │   ├── 01_Logic.lean        # Propositional logic
-│   │   ├── 02_Equality.lean     # Equality and rewriting
-│   │   └── 03_Induction.lean    # Inductive proofs
-│   └── data/            # Data structures
-│       ├── 01_Structures.lean   # Records and products
-│       ├── 02_Arrays.lean       # Efficient arrays
-│       └── 03_Inductive.lean    # Custom inductive types
-├── exercises/           # Workshop exercises
-│   ├── Ex01_Basics.lean          # rfl, simp, exact
-│   ├── Ex02_NaturalNumbers.lean  # induction, arithmetic
-│   ├── Ex03_Lists.lean           # list operations
-│   ├── Solutions/                # Complete solutions
-│   │   ├── Sol01_Basics.lean
-│   │   ├── Sol02_NaturalNumbers.lean
-│   │   └── Sol03_Lists.lean
-│   ├── Warmup.lean               # Tangled from lean4-programming.org
-│   └── warmup/                   # The same ten exercises, one file each
-│       ├── W01_Evaluation.lean … W10_FirstProof.lean
-│       └── Solutions/S01 … S10
-├── .github/workflows/   # CI: examples, exercises, solutions, scratch, lint
-├── AGENTS.md            # Issue tracking instructions
-└── .beads/              # Issue tracking database
-#+END_SRC
+The full listing is on GitHub; here's what each part is for.
+
+- [[file:exercises/][exercises/]] — the workshop proper: numbered exercises with a
+  =Solutions/= directory, plus [[file:exercises/warmup/][warmup/]], ten smaller files in the same
+  =sorry= + =#guard= style.
+- [[file:examples/][examples/]] — runnable reference code: functional programming, data
+  structures, proofs, and a =satirical/= set on why specifications matter.
+- [[file:scratch/][scratch/]] — tracked, evolving work in progress; not exercises, just
+  code as it's being built.
+- [[file:docs/][docs/]] — notes and recordings, including [[file:docs/demo/][docs/demo/]].
+- [[file:lean4-workshop.el][lean4-workshop.el]] and [[file:bin/l4w-emacs][bin/l4w-emacs]] — the Emacs support described below.
+- [[file:lean4-programming.org][lean4-programming.org]] — language summary that tangles to
+  =exercises/Warmup.lean=.
+- [[file:Makefile][Makefile]], [[file:lean-toolchain][lean-toolchain]], [[file:.github/workflows/][.github/workflows/]] — build, version pin, and CI.
 
 * Verified Versions
 
