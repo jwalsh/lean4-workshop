@@ -68,10 +68,12 @@
 
 (l4w/setup)
 
-;; Show keystrokes in the mode line, mainly useful when this session is
-;; being driven or watched rather than typed into directly.
+;; Show keystrokes in the header line, leaving the mode line free for
+;; Lean/LSP status (mode, server port, sorry count, flycheck counts).
+;; Mainly useful when this session is being driven or watched rather
+;; than typed into directly.
 (require 'keycast)
-(if (fboundp 'keycast-mode-line-mode) (keycast-mode-line-mode 1) (keycast-mode 1))
+(if (fboundp 'keycast-header-line-mode) (keycast-header-line-mode 1) (keycast-mode 1))
 
 (menu-bar-mode -1)
 (when (fboundp 'tool-bar-mode) (tool-bar-mode -1))
