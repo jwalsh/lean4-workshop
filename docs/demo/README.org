@@ -8,7 +8,10 @@
 A static shot of the real terminal session, not a GUI stand-in:
 =bin/l4w-emacs scratch/Euler.lean= run inside ~xterm~ on a virtual
 ~Xvfb~ display on a headless remote host (no physical display, no
-macOS-style screen-recording permission needed), captured with ~xwd~.
+macOS-style screen-recording permission needed), captured by window ID
+(~xwininfo~ + ~xwd -id~, not ~xwd -root~ -- the latter captures the
+whole virtual display, leaving a black band where the window doesn't
+fill it).
 The buffer is scrolled to a specific ~#eval~ line rather than shown at
 its default top-of-file view -- driven there with =tmux send-keys= over
 a separate ssh connection while ~xterm~ handled the rendering, so the
