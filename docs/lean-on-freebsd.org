@@ -1,0 +1,96 @@
+#+TITLE: Lean 4 on FreeBSD, working
+#+OPTIONS: toc:nil num:nil
+
+Extends [[https://wal.sh/research/lean4-4.23.0-freebsd-14.3/][wal.sh/research/lean4-4.23.0-freebsd-14.3]] and
+[[https://wal.sh/research/lean4-4.26.0-freebsd-15.0/][wal.sh/research/lean4-4.26.0-freebsd-15.0]]: both found real, root-caused
+problems (~elan~ has no FreeBSD platform support at all; native Lean
+needs ~procfs~, which FreeBSD doesn't mount by default) and both ended
+up recommending giving up on the local FreeBSD host -- GitHub
+Codespaces, in the 4.26/15.0 case.
+
+There's a third option neither page used: FreeBSD's own Linux
+compatibility layer (Linuxulator). If it's already set up -- confirmed
+here on two hosts on the same LAN as this repo (=hydra=,
+FreeBSD 14.4-RELEASE) -- Lean runs completely normally as a Linux
+binary, no Codespaces required.
+
+* Why this works
+
+~elan~'s FreeBSD panic (~internal error: entered unreachable code~ in
+~manifestation.rs~) happens because its platform-detection code has no
+FreeBSD branch at all. Run the *Linux build* of ~elan~ under FreeBSD's
+Linux emulation instead, and it correctly detects itself as Linux,
+downloads Linux Lean binaries, and those binaries' own need for
+~/proc/<pid>/file~ is satisfied by ~linprocfs~ mounted at
+=/compat/linux/proc= -- which a working Linux compat install already
+provides, solving the *other* page's ~procfs~ problem for free too.
+
+* Confirming the layer is usable
+
+#+begin_src sh
+kldstat -v | grep linux        # linux.ko loaded, linuxelf registered
+pkg info | grep linux_base     # e.g. linux_base-rl9-9.7
+mount | grep linprocfs         # linprocfs on /compat/linux/proc
+/compat/linux/bin/bash -c 'uname -a'   # should print "Linux ...", not FreeBSD
+#+end_src
+
+If all four check out, this works.
+
+* The fix
+
+Install elan into a *separate* directory from any existing (broken)
+native elan, entirely through the Linux-compat ~bash~ so nothing
+silently falls back to the native FreeBSD ~bash~/~curl~ on ~$PATH~
+partway through (that fallback is a real trap -- see below):
+
+#+begin_src sh
+/compat/linux/bin/bash -c '
+  export ELAN_HOME=$HOME/.elan-linux CARGO_HOME=$HOME/.elan-linux
+  curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+  /compat/linux/bin/bash /tmp/elan-init.sh -y --no-modify-path --default-toolchain none
+'
+#+end_src
+
+Then run Lean the same way, every time -- ~PATH~ needs
+~$HOME/.elan-linux/bin~ ahead of everything, and it has to stay inside
+the Linux-compat shell:
+
+#+begin_src sh
+/compat/linux/bin/bash -c '
+  export PATH=$HOME/.elan-linux/bin:$PATH
+  cd ~/ghq/github.com/jwalsh/lean4-workshop
+  lean --version   # Lean (version 4.23.0, x86_64-unknown-linux-gnu, ...)
+  gmake verify      # full suite, exit 0
+'
+#+end_src
+
+Verified 2026-09-17: =gmake verify= (every example, exercise, solution
+and scratch file in this repo) passes completely this way on a real
+FreeBSD 14.4 host.
+
+* Two traps hit getting here
+
+- *~bash /tmp/elan-init.sh~ silently used native FreeBSD bash.* Being
+  inside ~/compat/linux/bin/bash -c '...'~ does not make a bare
+  ~bash~ invoked *from within* that script resolve to the Linux one --
+  it resolves via ~$PATH~ like anything else, which still points at
+  native FreeBSD binaries unless every nested invocation is pinned to
+  the full ~/compat/linux/bin/bash~ path explicitly. Getting this
+  wrong is exactly what made the first attempt fail with the *same*
+  ~elan-x86_64-unknown-freebsd.tar.gz 404~ this whole approach exists
+  to avoid -- the platform detection silently ran under real FreeBSD
+  again.
+- *~$HOME~ in a locally-typed command expands locally, not remotely.*
+  Piping a command through ~ssh~/~tmux send-keys~ with an unescaped
+  ~$HOME~ substitutes the calling machine's home directory before the
+  remote shell ever sees it. Needs ~\$HOME~ (or single quotes around
+  the whole remote script) to defer expansion to the far end.
+
+* When this doesn't apply
+
+If the target host's Linux compat layer isn't already set up
+(~linux_base~ not installed, ~linux.ko~ not loaded), setting all of
+that up is its own yak-shave and Codespaces may genuinely be less
+effort, per the 4.26/15.0 page. This is the option worth trying
+*first* on a host that already has it, which is common on FreeBSD
+boxes doing double duty for other Linux-only tooling.

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Run a command against this repo's Lean toolchain on a FreeBSD host via
+# its Linux compatibility layer (elan has no native FreeBSD support; see
+# docs/lean-on-freebsd.org for why this works and what it needs).
+#
+# Usage, run ON the FreeBSD host itself (not from elsewhere over ssh):
+#   bin/l4w-freebsd-linux                    # gmake verify
+#   bin/l4w-freebsd-linux lean --version
+#   bin/l4w-freebsd-linux gmake warmup
+#
+# First run installs elan (Linux build) into ~/.elan-linux, separate from
+# any existing native elan, and fetches the pinned toolchain (~400MB).
+set -euo pipefail
+
+if [ "$(uname -s)" != "FreeBSD" ]; then
+  echo "l4w-freebsd-linux: this host isn't FreeBSD (uname says $(uname -s))." >&2
+  echo "Nothing to do here; just use lean/lake/gmake directly." >&2
+  exit 1
+fi
+
+linux_bash=/compat/linux/bin/bash
+if [ ! -x "$linux_bash" ]; then
+  echo "l4w-freebsd-linux: no Linux compat layer at $linux_bash." >&2
+  echo "Needs linux_base + linux.ko; see docs/lean-on-freebsd.org." >&2
+  exit 1
+fi
+
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [ ! -x "$HOME/.elan-linux/bin/elan" ]; then
+  echo "l4w-freebsd-linux: installing elan (Linux build) into ~/.elan-linux ..." >&2
+  "$linux_bash" -c '
+    export ELAN_HOME=$HOME/.elan-linux CARGO_HOME=$HOME/.elan-linux
+    curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/l4w-elan-init.sh
+    '"$linux_bash"' /tmp/l4w-elan-init.sh -y --no-modify-path --default-toolchain none
+  '
+fi
+
+if [ "$#" -eq 0 ]; then
+  set -- gmake verify
+fi
+
+exec "$linux_bash" -c '
+  export PATH=$HOME/.elan-linux/bin:$PATH
+  cd '"$repo_root"'
+  exec "$@"
+' _ "$@"
