@@ -38,40 +38,6 @@ gmake deps    # Verify Lean 4 toolchain
 gmake check   # Run a quick hello world test
 #+END_SRC
 
-* Repository Structure
-
-The full listing is on GitHub; here's what each part is for.
-
-- [[file:exercises/][exercises/]] — the workshop proper: numbered exercises with a
-  =Solutions/= directory, plus [[file:exercises/warmup/][warmup/]], ten smaller files in the same
-  =sorry= + =#guard= style.
-- [[file:examples/][examples/]] — runnable reference code: functional programming, data
-  structures, proofs, and a =satirical/= set on why specifications matter.
-- [[file:scratch/][scratch/]] — tracked, evolving work in progress; not exercises, just
-  code as it's being built.
-- [[file:docs/][docs/]] — notes and recordings, including [[file:docs/demo/][docs/demo/]].
-- [[file:lean4-workshop.el][lean4-workshop.el]] and [[file:bin/l4w-emacs][bin/l4w-emacs]] — the Emacs support described below.
-- [[file:lean4-programming.org][lean4-programming.org]] — language summary that tangles to
-  =exercises/Warmup.lean=.
-- [[file:Makefile][Makefile]], [[file:lean-toolchain][lean-toolchain]], [[file:.github/workflows/][.github/workflows/]] — build, version pin, and CI.
-
-* Verified Versions
-
-What the repo was last checked against, on macOS arm64 (2026-09-15):
-
-| Component     | Version                          | Note                                                   |
-|---------------+----------------------------------+--------------------------------------------------------|
-| Lean          | 4.23.0 (pinned in lean-toolchain)| examples, exercises and solutions all pass              |
-| Lean          | 4.32.0                           | solutions also pass; ~Array.mkArray~ and ~String.split~ changed, solutions avoid both |
-| elan          | 4.1.2                            |                                                        |
-| GNU Emacs     | 32.0.50                          | profile needs 29+ for ~--init-directory~ and ~package-vc~ |
-| lean4-mode    | 1.1.2 (commit 1388f9d)           | from leanprover-community, not on MELPA                  |
-| lsp-mode      | 20260905                         | with lsp-ui, company, flycheck, magit-section from MELPA |
-| GNU make      | ~gmake~                          | ~/usr/local/bin/bash~ on FreeBSD, ~/bin/bash~ elsewhere |
-| pdflatex      | TeX Live 2024                    | for ~gmake pdf~: tcolorbox, titlesec, listingsutf8        |
-
-~gmake verify~ runs everything Lean-side; ~gmake emacs~ byte-compiles the Emacs support.
-
 * Warm-up Exercises
 
 Ten small files under [[file:exercises/warmup/][exercises/warmup/]], one per chapter of
@@ -89,7 +55,13 @@ The same exercises with a language summary around them are in
 [[file:lean4-programming.org][lean4-programming.org]], which tangles to a single
 ~exercises/Warmup.lean~ (~gmake tangle~) and exports to PDF (~gmake pdf~).
 
-* Emacs
+* Editor Setup
+
+** VS Code (Recommended)
+
+Install the =lean4= extension from the marketplace.
+
+** Emacs
 
 [[file:docs/demo/euler-evals.gif]]
 
@@ -136,6 +108,25 @@ The mode line shows the number of ~sorry~ left. ~l4w/eval~ and
 ~l4w/check-expr~ are the debugger when LSP is not enough: they append the
 command to a copy of the buffer and run ~lean~, so the expression sees every
 definition, ~sorry~ included. Solutions never open on their own.
+
+~bin/l4w-emacs~ needs nothing from your own config; its profile installs
+lean4-mode with ~package-vc-install~. To use lean4-mode in your own Emacs
+instead, this recipe was run verbatim against a fresh straight.el bootstrap
+and pulls lsp-mode, dash, magit-section and compat with it:
+
+#+BEGIN_SRC elisp
+;; Using straight.el + use-package
+(use-package lean4-mode
+  :straight (lean4-mode
+             :type git
+             :host github
+             :repo "leanprover-community/lean4-mode"
+             :files ("*.el" "data")))
+;; or, with package-vc (Emacs 29+):
+;; M-x l4w/install-lean4-mode
+#+END_SRC
+
+Key binding: =C-c C-i= toggles the proof state view.
 
 * Learning Path
 
@@ -190,35 +181,43 @@ The =examples/correct/= directory shows how specifications /should/ be written.
 
 *Moral*: Formal verification proves your code matches your spec. It doesn't prove your spec is what you actually wanted.
 
-* Editor Setup
+* Reference
 
-** VS Code (Recommended)
+** Repository Structure
 
-Install the =lean4= extension from the marketplace.
+The full listing is on GitHub; here's what each part is for.
 
-** Emacs
+- [[file:exercises/][exercises/]] — the workshop proper: numbered exercises with a
+  =Solutions/= directory, plus [[file:exercises/warmup/][warmup/]], ten smaller files in the same
+  =sorry= + =#guard= style.
+- [[file:examples/][examples/]] — runnable reference code: functional programming, data
+  structures, proofs, and a =satirical/= set on why specifications matter.
+- [[file:scratch/][scratch/]] — tracked, evolving work in progress; not exercises, just
+  code as it's being built.
+- [[file:docs/][docs/]] — notes and recordings, including [[file:docs/demo/][docs/demo/]].
+- [[file:lean4-workshop.el][lean4-workshop.el]] and [[file:bin/l4w-emacs][bin/l4w-emacs]] — the Emacs support described above.
+- [[file:lean4-programming.org][lean4-programming.org]] — language summary that tangles to
+  =exercises/Warmup.lean=.
+- [[file:Makefile][Makefile]], [[file:lean-toolchain][lean-toolchain]], [[file:.github/workflows/][.github/workflows/]] — build, version pin, and CI.
 
-~bin/l4w-emacs~ (see [[*Emacs][Emacs]] above) needs nothing from your own
-config; its profile installs lean4-mode with ~package-vc-install~. To use
-lean4-mode in your own Emacs instead, this recipe was run verbatim against
-a fresh straight.el bootstrap and pulls lsp-mode, dash, magit-section and
-compat with it:
+** Verified Versions
 
-#+BEGIN_SRC elisp
-;; Using straight.el + use-package
-(use-package lean4-mode
-  :straight (lean4-mode
-             :type git
-             :host github
-             :repo "leanprover-community/lean4-mode"
-             :files ("*.el" "data")))
-;; or, with package-vc (Emacs 29+):
-;; M-x l4w/install-lean4-mode
-#+END_SRC
+What the repo was last checked against, on macOS arm64 (2026-09-15):
 
-Key binding: =C-c C-i= toggles the proof state view.
+| Component     | Version                          | Note                                                   |
+|---------------+----------------------------------+--------------------------------------------------------|
+| Lean          | 4.23.0 (pinned in lean-toolchain)| examples, exercises and solutions all pass              |
+| Lean          | 4.32.0                           | solutions also pass; ~Array.mkArray~ and ~String.split~ changed, solutions avoid both |
+| elan          | 4.1.2                            |                                                        |
+| GNU Emacs     | 32.0.50                          | profile needs 29+ for ~--init-directory~ and ~package-vc~ |
+| lean4-mode    | 1.1.2 (commit 1388f9d)           | from leanprover-community, not on MELPA                  |
+| lsp-mode      | 20260905                         | with lsp-ui, company, flycheck, magit-section from MELPA |
+| GNU make      | ~gmake~                          | ~/usr/local/bin/bash~ on FreeBSD, ~/bin/bash~ elsewhere |
+| pdflatex      | TeX Live 2024                    | for ~gmake pdf~: tcolorbox, titlesec, listingsutf8        |
 
-* Makefile Targets
+~gmake verify~ runs everything Lean-side; ~gmake emacs~ byte-compiles the Emacs support.
+
+** Makefile Targets
 
 | Target | Description |
 |--------+-------------|
