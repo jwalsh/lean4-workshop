@@ -1,6 +1,17 @@
 #+TITLE: Demo recordings
 #+OPTIONS: toc:nil num:nil
 
+* euler-screenshot.png
+
+[[file:euler-screenshot.png]]
+
+A static shot of the real terminal session, not a GUI stand-in:
+=bin/l4w-emacs scratch/Euler.lean= run inside ~xterm~ on a virtual
+~Xvfb~ display on a headless remote host (no physical display, no
+macOS-style screen-recording permission needed), captured with ~xwd~.
+Full pipeline, script, and the FreeBSD-specific LSP caveat are in
+[[https://github.com/jwalsh/emacs-recording-tools][jwalsh/emacs-recording-tools]] (=bin/xvfb-terminal-shot.sh=).
+
 * euler-evals.gif
 
 Navigating [[file:../../scratch/Euler.lean][scratch/Euler.lean]] top to bottom, landing on each ~#eval~
