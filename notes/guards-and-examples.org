@@ -1,0 +1,116 @@
+#+TITLE: Guards, examples, and how many you need
+#+OPTIONS: toc:nil num:nil
+
+Prompted by a question about [[https://github.com/webyrd/Barliman][Barliman]] (Byrd/Friedman's example-driven
+program synthesizer) and a parallel one about interview test cases: if a
+=#guard= is an example, and an example is a constraint on the space of
+possible implementations, how many constraints does it take to pin one
+implementation down?
+
+* Barliman's actual mechanism
+
+Barliman doesn't search over *all* programs. You give it a program with
+holes — a skeleton, usually already shaped like a recursive match — plus
+a handful of input/output examples, and it uses miniKanren's relational
+interpreter to find hole-fillings consistent with every example. The
+reason 2-4 examples are often enough in the demos isn't that examples are
+unreasonably powerful; it's that the skeleton has already done most of
+the narrowing. A hole inside =| x :: xs => ...= can only be filled with
+something that respects that shape. The examples pick among the few
+candidates the skeleton still allows, not among all programs that could
+ever produce the given outputs.
+
+This maps exactly onto how the exercises in this repo are built:
+=exercises/warmup/W*.lean= already gives the signature and, for anything
+beyond the simplest cases, the pattern-match arms (=| [] => ...=,
+=| x :: xs => ...=). The =#guard= isn't disambiguating between arbitrary
+Lean programs; it's disambiguating between the small number of things a
+person would plausibly write in that skeleton. That's why one guard per
+stub has worked reasonably well here — the type signature and the shape
+of the hole are already carrying most of the weight.
+
+* A guard can still fail to pin things down
+
+One example never distinguishes two implementations that happen to agree
+on it. This isn't hypothetical for list problems — reverse and
+descending sort agree on every already-sorted input:
+
+#+begin_src lean
+def reverseImpl (xs : List Nat) : List Nat := xs.reverse
+
+def insertDesc (x : Nat) : List Nat → List Nat
+  | [] => [x]
+  | y :: ys => if x ≥ y then x :: y :: ys else y :: insertDesc x ys
+def sortDescImpl (xs : List Nat) : List Nat := xs.foldr insertDesc []
+
+-- one guard: both pass
+#guard reverseImpl [1, 2, 3] = [3, 2, 1]
+#guard sortDescImpl [1, 2, 3] = [3, 2, 1]
+
+-- a second guard, on an unsorted input, separates them
+#eval reverseImpl [1, 3, 2]   -- [2, 3, 1]
+#eval sortDescImpl [1, 3, 2]  -- [3, 2, 1]
+#+end_src
+
+Checked against the real =lean= binary: both outputs are exactly as
+shown. A single sorted-input example is a genuinely bad guard for
+=reverse=, not a contrived one — it's the example someone reaches for
+first, and it's the one that fails to rule out the most tempting wrong
+answer.
+
+* The practical answer: categories, not a count
+
+There's no number that works in general — for anything beyond the
+smallest finite domain, no finite set of examples for a Turing-complete
+target ever nails down "the" implementation; some other function agrees
+with your examples and diverges everywhere else. That's the same wall
+program synthesis runs into and the same reason this repo eventually
+reaches for =theorem= instead of more =#guard= lines.
+
+What does work, in practice, for both a workshop's stub and an
+interviewer's sample cases, is picking examples from distinct
+*categories* rather than picking more of them:
+
+| Category | What it rules out |
+|----------+--------------------|
+| Base case (empty / zero) | the recursion doesn't bottom out, or bottoms out wrong |
+| Smallest nontrivial case | off-by-one at the boundary between base and general case |
+| A typical, "generic" case | the base case; anything hard-coded for size 0 or 1 |
+| An order-sensitive / asymmetric input | reverse-vs-sort, first-vs-last, min-vs-max confusions |
+| Duplicate or repeated values | "assumes uniqueness" bugs, first-vs-last-match ambiguity |
+| A negative / absent-result case | "assumes success", missing =none=/=false= branch |
+| A boundary specific to the problem | the interview cheat with a name: linear-time trap, division-truncation trap, etc. |
+
+Five to seven examples, one per category that applies to the problem,
+routinely catches the great majority of plausible wrong implementations
+— call it 80% as a working number, in the same sense "most bugs are
+boundary bugs" is a working number in testing folklore (Myers). The
+categories are doing the work; a sixth example from the "typical case"
+bucket adds almost nothing that the first one from that bucket didn't
+already cover.
+
+Getting past that 80% takes problem-specific knowledge, not more
+examples of the same kind: for =twoSum=, a duplicate-value case
+(=[3, 3]=, target =6=) is what actually separates "compare values" from
+"compare indices" bugs. For =rpn=, an input needing truncating (not
+floor) division is what separates it from the Python/Ruby default. These
+are exactly the "adversarial" examples the interview-questions repo's
+=polyglot/SPEC.org= already bakes in per problem — that spec was built
+by someone who'd seen the wrong answers before, not by adding examples
+until confidence felt high.
+
+* Applying it here
+
+- *Interview sample cases*: give one example per applicable category
+  above (typically 4-6), plus one adversarial case if you already know
+  the common wrong answer for that specific problem. That's the
+  =SPEC.org= pattern in [[file:../../jwalsh1-chwy/interview-questions/][interview-questions]] already.
+- *This workshop's guards*: mostly fine as one-per-stub, because the
+  pattern-match skeleton is doing Barliman's job of narrowing first.
+  Where a stub's guard is a sorted or otherwise "nice" input (reverse,
+  sort, anything order-sensitive), it's worth a second guard on a
+  scrambled input, cheaply, the same way the fix above works.
+- *Past examples entirely*: this is where =myReverse_length=-style
+  theorems earn their place. A guard checks the claim on the inputs you
+  thought to write; a theorem checks it on all of them. Nothing about
+  choosing better examples closes that gap — only the proof does.
