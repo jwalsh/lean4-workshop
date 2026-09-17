@@ -4,10 +4,10 @@
 namespace Euler
 
 -- #1: sum of all multiples of 3 or 5 below N.
-def sumMultiples (limit : Nat) : Nat := (List.range limit).filter (fun n => n % 3 == 0 || n % 5 == 0) |>.foldl (· + ·) 0
+def sumMultiples (limit : Nat) : Nat := sorry 
 #guard sumMultiples 10 = 23
 #eval sumMultiples 1000
-
+  
 -- #2: sum of even-valued Fibonacci terms not exceeding N.
 def evenFibSum (limit : Nat) : Nat := sorry
 #guard evenFibSum 10 = 10
@@ -35,6 +35,8 @@ def largestPrimeFactor (n : Nat) : Nat := sorry
 
 -- #7: the Nth prime, 1-indexed.
 def isPrime (n : Nat) : Bool := sorry
+#guard isPrime 2 = True
+
 def nthPrime (n : Nat) : Nat := sorry
 #guard nthPrime 6 = 13
 #eval nthPrime 10001
